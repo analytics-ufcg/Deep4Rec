@@ -15,3 +15,7 @@ Deep4Rec is not affiliated to the official TensorFlow project in any way.
 ## Why Deep4Rec?
 
 Deep4Rec was developed mainly to accelerate research by providing a way for researchers to use previously proposed models as black boxes.
+
+## Contributing
+
+Want to help? [Here is how to get started](CONTRIBUTE.md).
