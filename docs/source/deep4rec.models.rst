@@ -1,0 +1,54 @@
+deep4rec.models package
+=======================
+
+Submodules
+----------
+
+deep4rec.models.fm module
+-------------------------
+
+.. automodule:: deep4rec.models.fm
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+deep4rec.models.loss\_functions module
+--------------------------------------
+
+.. automodule:: deep4rec.models.loss_functions
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+deep4rec.models.model module
+----------------------------
+
+.. automodule:: deep4rec.models.model
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+deep4rec.models.optimizers module
+---------------------------------
+
+.. automodule:: deep4rec.models.optimizers
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+deep4rec.models.widedeep module
+-------------------------------
+
+.. automodule:: deep4rec.models.widedeep
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: deep4rec.models
+    :members:
+    :undoc-members:
+    :show-inheritance:
