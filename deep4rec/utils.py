@@ -1,11 +1,11 @@
-"""Utilitiy functions for datasets."""
+"""Utilitiy functions."""
 
 import os
 import urllib.request
 import zipfile
 
 
-DEFAULT_OUTPUT_DIR = '/tmp/tfrec_data/'
+DEFAULT_OUTPUT_DIR = '/tmp/deep4rec_data/'
 
 
 def parent_path(path):

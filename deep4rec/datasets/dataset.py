@@ -4,7 +4,7 @@ from abc import ABC
 from abc import abstractmethod
 import logging
 
-import deep4rec.datasets.utils as ds_utils
+import deep4rec.utils as utils
 
 
 class Dataset(ABC):
@@ -20,7 +20,7 @@ class Dataset(ABC):
   def download(self):
     if self.verbose:
       logging.info('Downloading {} at {}'.format(self.dataset_name, self.output_dir))
-    ds_utils.download(self.url, self.output_dir)
+    utils.download(self.url, self.output_dir)
 
   @abstractmethod
   def preprocess(self):

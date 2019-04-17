@@ -1,7 +1,9 @@
 import os
 
+import deep4rec.models
+
 from deep4rec.datasets.ml100k import MovieLens100kDataset
-import deep4rec.datasets.utils as utils
+import deep4rec.utils as utils
 
 datasets = {
   'ml-100k': MovieLens100kDataset,

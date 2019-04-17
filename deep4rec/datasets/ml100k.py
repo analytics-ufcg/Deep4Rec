@@ -9,8 +9,7 @@ import numpy as np
 from sklearn.preprocessing import OrdinalEncoder
 
 from deep4rec.datasets.dataset import Dataset
-import deep4rec.datasets.utils as ds_utils
-
+import deep4rec.utils as utils
 
 
 class MovieLens100kDataset(Dataset):
@@ -28,7 +27,7 @@ class MovieLens100kDataset(Dataset):
 
   def download(self):
     super(MovieLens100kDataset, self).download()
-    ds_utils.maybe_unzip(self.zip_path)
+    utils.maybe_unzip(self.zip_path)
 
   def check_downloaded(self):
     return os.path.exists(self.zip_path)
@@ -37,7 +36,7 @@ class MovieLens100kDataset(Dataset):
     return False
 
   def preprocess(self):
-    ds_utils.maybe_unzip(self.zip_path)
+    utils.maybe_unzip(self.zip_path)
     self.train_data, self.train_y, self.train_users, self.train_items = self._load_data(
       'ua.base', train_data=True)
     self.test_data, self.test_y, self.test_users, self.test_items = self._load_data(
@@ -73,6 +72,14 @@ class MovieLens100kDataset(Dataset):
   @property
   def items(self):
     return self.train_items
+
+  @property
+  def num_features_one_hot(self):
+    return len(self.users) + len(self.items)
+
+  @property
+  def num_features(self):
+    return 2
 
   @property
   def test(self):
