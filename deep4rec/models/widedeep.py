@@ -56,17 +56,17 @@ class WideDeep(Model):
 
     def call(self, one_hot_features, dense_features=None, wide_features=None):
         """
-    Args:
-      one_hot_features: A dense tensor of shape [batch_size, self._num_features]
-        that indicates which features should be embedded.
-      dense_features: A dense tensor of shape [batch_size, None] with other
-        dense features. If None is not used.
-      wide_features: A dense tensor of shape [batch_size, None] with wide
-        features. If None is not used. Which means there's no wide model.
+        Args:
+            one_hot_features: A dense tensor of shape [batch_size, self._num_features]
+                that indicates which features should be embedded.
+            dense_features: A dense tensor of shape [batch_size, None] with other
+                dense features. If None is not used.
+            wide_features: A dense tensor of shape [batch_size, None] with wide
+                features. If None is not used. Which means there's no wide model.
 
-    Returns:
-      Logits.
-    """
+        Returns:
+            Logits.
+        """
         embeddings = self.embedding(one_hot_features)
         embeddings = self.flat(embeddings)
 

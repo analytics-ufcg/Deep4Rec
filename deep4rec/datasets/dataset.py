@@ -24,17 +24,17 @@ class Dataset(ABC):
     ):
         """Make a TensorFlow dataset.
 
-    Args:
-      data: A numpy array containing features.
-      target: A Numpy Array indicating the target.
-      shuffle: A boolean indicating if the dataset should shuffled or not.
-      buffer_size: An integer indicating the buffer size. Used only when shuffling.
-        Default value is 1000.
-      batch_size: Batch size. Default value is 32.
+        Args:
+            data: A numpy array containing features.
+            target: A Numpy Array indicating the target.
+            shuffle: A boolean indicating if the dataset should shuffled or not.
+            buffer_size: An integer indicating the buffer size. Used only when shuffling.
+                Default value is 1000.
+            batch_size: Batch size. Default value is 32.
 
-    Returns:
-      A TensorFlow Dataset instance.
-    """
+        Returns:
+            A TensorFlow Dataset instance.
+        """
         ds = tf.data.Dataset.from_tensor_slices((data, target))
         if shuffle:
             ds = ds.shuffle(buffer_size=buffer_size)
@@ -44,12 +44,12 @@ class Dataset(ABC):
     def make_tf_dataset(self, data_partition):
         """Make a TensorFlow dataset for a data partition.
 
-      Args:
-        data_partition: A string (train | valid | test)
+        Args:
+            data_partition: A string (train | valid | test)
 
-      Returns:
-        A TensorFlow Dataset instance.
-      """
+        Returns:
+            A TensorFlow Dataset instance.
+        """
         if data_partition == "train":
             return self._make_tf_dataset(self.train_data, self.train_y)
         elif data_partition == "test":

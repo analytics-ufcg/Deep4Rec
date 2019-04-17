@@ -35,15 +35,15 @@ class FM(Model):
 
     def call(self, one_hot_features, features=None):
         """
-    Args:
-      one_hot_features: A dense tensor of shape [batch_size, self._num_features]
-        that indicates which features are present in this input.
-      features: A dense tensor of shape [batch_size, self._num_features] that indicates
-        the value of each feature.
+        Args:
+            one_hot_features: A dense tensor of shape [batch_size, self._num_features]
+                that indicates which features are present in this input.
+            features: A dense tensor of shape [batch_size, self._num_features] that indicates
+                the value of each feature.
 
-    Returns:
-      Logits.
-    """
+        Returns:
+            Logits.
+        """
         # TODO: add support to other features.
         non_zero_weights = self.w(
             one_hot_features
