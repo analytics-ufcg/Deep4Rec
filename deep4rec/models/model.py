@@ -40,8 +40,11 @@ class Model(tf.keras.Model):
             loss_plot.append(total_loss / count)
 
             if verbose:
-                print("Epoch {} Loss {:.6f}".format(epoch + 1, loss_plot[-1]))
-                print("1 epoch = {} secs\n".format(time.time() - start))
+                print(
+                    "Epoch {}, Loss {:.3f}, Time: {:2f} (s)".format(
+                        epoch + 1, loss_plot[-1], time.time() - start
+                    )
+                )
 
     def eval(self, ds, loss_functions, metrics=None, verbose=True):
         if not metrics:
