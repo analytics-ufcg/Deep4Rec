@@ -8,12 +8,16 @@ def mse(real, pred):
     return tf.losses.mean_squared_error(real, pred)
 
 
+def rmse(real, pred):
+    return tf.sqrt(mse(real, pred))
+
+
 def l2(real, pred):
     real = tf.reshape(tf.to_float(real), (-1, 1))
     return tf.nn.l2_loss(real - pred)
 
 
-losses = {"mse": mse, "l2": l2}
+losses = {"mse": mse, "rmse": rmse, "l2": l2}
 
 
 def get_loss_fn(loss_fn_name):
