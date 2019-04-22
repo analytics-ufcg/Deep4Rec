@@ -41,19 +41,24 @@ class Dataset(ABC):
         ds = ds.batch(batch_size)
         return ds
 
-    def make_tf_dataset(self, data_partition):
+    def make_tf_dataset(self, data_partition, batch_size=32):
         """Make a TensorFlow dataset for a data partition.
 
         Args:
             data_partition: A string (train | valid | test)
+            batch_size: Batch size.
 
         Returns:
             A TensorFlow Dataset instance.
         """
         if data_partition == "train":
-            return self._make_tf_dataset(self.train_data, self.train_y)
+            return self._make_tf_dataset(
+                self.train_data, self.train_y, batch_size=batch_size
+            )
         elif data_partition == "test":
-            return self._make_tf_dataset(self.test_data, self.test_y)
+            return self._make_tf_dataset(
+                self.test_data, self.test_y, batch_size=batch_size
+            )
 
     def download(self):
         if self.verbose:
