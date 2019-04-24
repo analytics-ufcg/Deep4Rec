@@ -16,5 +16,3 @@ model.train(
     loss_function="l2",
     optimizer=tf.train.AdagradOptimizer(learning_rate=0.05),
 )
-
-print("RMSE", model.eval(ds.make_tf_dataset("test"), loss_functions=["rmse"]))
