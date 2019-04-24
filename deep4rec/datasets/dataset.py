@@ -10,11 +10,17 @@ import deep4rec.utils as utils
 
 
 class Dataset(ABC):
-    """Dataset interface."""
+    """Dataset abstraction.
+
+    This class is responsible for dowloading the data, preprocessing it,
+    and serve it using the following attributes:
+        - self.train_data, self.train_y
+        - self.test_data, self.test_y
+    """
 
     url = None
 
-    def __init__(self, dataset_name, output_dir, verbose=False, *args, **kwargs):
+    def __init__(self, dataset_name, output_dir, verbose=True, *args, **kwargs):
         self.dataset_name = dataset_name
         self.output_dir = output_dir
         self.verbose = verbose
@@ -41,26 +47,43 @@ class Dataset(ABC):
         ds = ds.batch(batch_size)
         return ds
 
-    def make_tf_dataset(self, data_partition):
+    def make_tf_dataset(self, data_partition, batch_size=32, shuffle=None):
         """Make a TensorFlow dataset for a data partition.
 
         Args:
-            data_partition: A string (train | valid | test)
+            data_partition: A string (train | test).
+            batch_size: Batch size.
+            shuffle: A boolean indicating if the dataset should be shuffled.
 
         Returns:
             A TensorFlow Dataset instance.
+
+        Raises:
+            ValueError if `data_partition` is unknown.
         """
         if data_partition == "train":
-            return self._make_tf_dataset(self.train_data, self.train_y)
+            if shuffle is None:
+                shuffle = True
+            return self._make_tf_dataset(
+                self.train_data, self.train_y, batch_size=batch_size, shuffle=shuffle
+            )
         elif data_partition == "test":
-            return self._make_tf_dataset(self.test_data, self.test_y)
+            if shuffle is None:
+                shuffle = False
+            return self._make_tf_dataset(
+                self.test_data, self.test_y, batch_size=batch_size, shuffle=shuffle
+            )
+        else:
+            raise ValueError("Unknown data partition {}".format(data_partition))
 
-    def download(self):
+    def download(self, url=None):
+        if not url:
+            url = self.url
         if self.verbose:
             logging.info(
                 "Downloading {} at {}".format(self.dataset_name, self.output_dir)
             )
-        utils.download(self.url, self.output_dir)
+        utils.download(url, self.output_dir)
 
     @abstractmethod
     def preprocess(self):

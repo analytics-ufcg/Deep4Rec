@@ -1,9 +1,12 @@
 """
-Implementation of Factorization Machines.
+Implementation of Neural Factorization Machines.
 
-Paper: Factorization Machines
-link: https://www.csie.ntu.edu.tw/~b97053/paper/Rendle2010FM.pdf
-Author: Steffen Rendle, Osaka University
+Paper:  Neural Factorization Machines for Sparse Predictive Analytics.
+In Proceedings of SIGIR '17, Shinjuku, Tokyo, Japan, August 07-11, 2017.
+
+Link: http://www.comp.nus.edu.sg/~xiangnan/papers/sigir17-nfm.pdf
+
+Authors: Xiangnan He and Tat-Seng Chua (2017)
 """
 
 import tensorflow as tf
@@ -12,26 +15,54 @@ import tensorflow.contrib.eager as tfe
 from deep4rec.models.model import Model
 
 
-class FM(Model):
+class NeuralFM(Model):
     def __init__(
         self,
         ds,
         num_units=64,
+        layers=None,
+        keep_prob=None,
         apply_batchnorm=True,
+        activation_fn="relu",
         apply_dropout=True,
-        dropout_prob=0.5,
         l2_regularizer=0.0,
     ):
-        super(FM, self).__init__()
-
-        # total number of features = N weights
+        super(NeuralFM, self).__init__()
         self._num_weights = ds.num_features_one_hot
-        # a weight is a vector of size `num_units`
         self._num_units = num_units
-        # number of features used
         self._num_features = ds.num_features
 
-        # define weights and biases
+        if layers and keep_prob and apply_dropout:
+            assert len(layers) + 1 == len(keep_prob)
+
+        if layers is None:
+            layers = [64]
+
+        if keep_prob is None:
+            keep_prob = [0.8, 0.5]
+        self.keep_prob = keep_prob
+
+        self.apply_batchnorm = apply_batchnorm
+        self.apply_dropout = apply_dropout
+        self.activation = activation_fn
+        self.dense_layers = [
+            tf.keras.layers.Dense(units, activation=self.activation) for units in layers
+        ]
+        self.final_dense_layer = tf.keras.layers.Dense(1)
+
+        if self.apply_batchnorm:
+            self.batch_norm_layer = tf.keras.layers.BatchNormalization()
+            self.dense_batch_norm = [
+                tf.keras.layers.BatchNormalization() for _ in layers
+            ]
+
+        if self.apply_dropout:
+            self.fm_dropout = tf.keras.layers.Dropout(self.keep_prob[-1])
+            self.dense_dropout = [
+                tf.keras.layers.Dropout(self.keep_prob[i])
+                for i in range(len(keep_prob) - 1)
+            ]
+
         self.w = tf.keras.layers.Embedding(
             self._num_weights,
             num_units,
@@ -49,17 +80,8 @@ class FM(Model):
         )
         self.bias = tfe.Variable(tf.constant(0.0))
 
-        self.apply_batchnorm = apply_batchnorm
-        if self.apply_batchnorm:
-            self.batch_norm_layer = tf.keras.layers.BatchNormalization()
-
-        self.apply_dropout = apply_dropout
-        if self.apply_dropout:
-            self.dropout = tf.keras.layers.Dropout(dropout_prob)
-
     def call(self, one_hot_features, training, features=None):
-        """Forward pass.
-
+        """
         Args:
             one_hot_features: A dense tensor of shape [batch_size, self._num_features]
                 that indicates which features are present in this input.
@@ -72,6 +94,7 @@ class FM(Model):
         """
         # TODO: add support to other features.
 
+        # FM
         weights = self.w(one_hot_features)  # [batch_size, num_features, num_units]
 
         sum_nzw = tf.reduce_sum(weights, 1)  # [batch_size, num_units]
@@ -86,8 +109,18 @@ class FM(Model):
             fm = self.batch_norm_layer(fm, training=training)
 
         if self.apply_dropout:
-            fm = self.dropout(fm, training=training)
+            fm = self.fm_dropout(fm, training=training)
 
+        # Dense layers on top of FM
+        for i, layer in enumerate(self.dense_layers):
+            fm = layer(fm)
+            if self.apply_batchnorm:
+                fm = self.dense_batch_norm[i](fm)
+            if self.apply_dropout:
+                fm = self.dense_dropout[i](fm)
+
+        # Aggregate
+        fm = self.final_dense_layer(fm)  # [batch_size, 1]
         bilinear = tf.reduce_sum(fm, 1, keep_dims=True)  # [batch_size, 1]
         weight_bias = tf.reduce_sum(self.w0(one_hot_features), 1)  # [batch_size, 1]
         logits = tf.add_n([bilinear, weight_bias]) + self.bias
