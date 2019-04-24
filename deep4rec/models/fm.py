@@ -16,7 +16,7 @@ class FM(Model):
     def __init__(
         self,
         ds,
-        num_units=128,
+        num_units=64,
         apply_batchnorm=True,
         apply_dropout=True,
         dropout_prob=0.5,
