@@ -2,7 +2,7 @@
 
 import tensorflow as tf
 
-optimizers = {"adam": tf.train.AdamOptimizer}
+optimizers = {"adam": tf.train.AdamOptimizer, "adagrad": tf.train.AdagradOptimizer}
 
 
 def build_optimizer(optimizer_name, *args, **kwargs):
