@@ -18,4 +18,4 @@ Deep4Rec was developed mainly to accelerate research by providing a way for rese
 
 ## Contributing
 
-Want to help? [Here is how to get started](CONTRIBUTE.md).
+[Here is all you need to get started](CONTRIBUTE.md).
