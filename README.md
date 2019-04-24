@@ -2,6 +2,21 @@
 
 Popular Deep Learning based recommendation algorithms built on top of TensorFlow served on a simple API.
 
+```python
+
+from deep4rec import datasets
+from deep4rec import models
+
+# Dataset
+ds = datasets.build_dataset('ml-100k')
+
+# Model
+model = models.FM(ds)
+
+model.train(ds, epochs=1000,
+            loss_function='rmse', optimizer='adam')
+```
+
 ## What is Deep4Rec ?
 
 Deep4Rec is a high level API that serves popular Deep Learning based recommendation algorithms as black box models. The models are built on top of TensorFlow 1.10.0 using Eager mode.
