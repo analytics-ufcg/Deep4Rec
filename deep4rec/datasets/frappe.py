@@ -31,11 +31,7 @@ class FrappeDataset(Dataset):
         super(FrappeDataset, self).download(self.test_url)
 
     def check_downloaded(self):
-        return (
-            os.path.exists(self.train_file)
-            and os.path.exists(self.test_file)
-            and os.path.exists(self.valid_file)
-        )
+        return os.path.exists(self.train_file) and os.path.exists(self.test_file)
 
     def preprocess(self):
         self.features_M = self.map_features()
