@@ -54,7 +54,7 @@ class FrappeDataset(Dataset):
                 items = line.strip().split(" ")
                 for item in items[1:]:
                     if item not in self.features:
-                        self.features[item] = i
+                        self.features[item] = last_index
                         last_index += 1
                 line = f.readline()
 
