@@ -2,11 +2,16 @@ import os
 
 import deep4rec.models
 
+from deep4rec.datasets.census import CensusDataset
 from deep4rec.datasets.frappe import FrappeDataset
 from deep4rec.datasets.ml100k import MovieLens100kDataset
 import deep4rec.utils as utils
 
-datasets = {"frappe": FrappeDataset, "ml-100k": MovieLens100kDataset}
+datasets = {
+    "census": CensusDataset,
+    "frappe": FrappeDataset,
+    "ml-100k": MovieLens100kDataset,
+}
 
 
 def build_dataset(
@@ -43,5 +48,8 @@ def build_dataset(
 
     if maybe_preprocess:
         dataset.maybe_preprocess()
+
+    # Some datasets need a building step.
+    dataset.build()
 
     return dataset
