@@ -5,8 +5,10 @@ used for evaluation.
 """
 
 import numpy as np
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, log_loss
 import tensorflow as tf
+
+from deep4rec import utils
 
 
 # TensorFlow losses
@@ -24,15 +26,36 @@ def tf_l2(target, pred):
     return tf.nn.l2_loss(target - pred)
 
 
+def tf_binary_cross_entropy(target, pred):
+    target = tf.reshape(tf.to_float(target), (-1, 1))
+    return tf.nn.sigmoid_cross_entropy_with_logits(labels=target, logits=pred)
+
+
 # Evaluation losses
-def rmse(target, pred, bound_pred=True):
+def mse(target, pred, bound_pred=True):
     if bound_pred:
         pred = np.clip(pred, a_min=min(pred), a_max=max(pred))
-    return np.sqrt(mean_squared_error(target, pred))
+    return mean_squared_error(target, pred)
 
 
-tf_losses = {"mse": tf_mse, "rmse": tf_rmse, "l2": tf_l2}
-eval_losses = {"rmse": rmse}
+def rmse(target, pred, bound_pred=True):
+    return np.sqrt(mse(target, pred, bound_pred=bound_pred))
+
+
+def binary_cross_entropy(target, pred):
+    assert len(target) == len(pred)
+    prob_pred = [[1 - p, p] for p in utils.logits_to_prob(pred)]
+    return log_loss(target, prob_pred)
+
+
+tf_losses = {
+    "binary_cross_entropy": tf_binary_cross_entropy,
+    "mse": tf_mse,
+    "rmse": tf_rmse,
+    "l2": tf_l2,
+}
+
+eval_losses = {"mse": mse, "rmse": rmse, "binary_cross_entropy": binary_cross_entropy}
 
 
 def get_tf_loss_fn(loss_fn_name):
