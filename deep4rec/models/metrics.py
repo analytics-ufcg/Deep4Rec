@@ -1,15 +1,46 @@
 """Metrics definition."""
 
+import numpy as np
+from sklearn import metrics as sk_metrics
 import tensorflow as tf
+
+from deep4rec import utils
 
 
 def accuracy(real, pred):
-    assert len(real) == len(pred)
-    argmax_pred = tf.argmax(pred).numpy()
-    return np.sum(argmax_pred == pred) / len(real)
+    pred = utils.logits_to_class(pred)
+    return sk_metrics.accuracy_score(real, pred)
 
 
-metrics = {"acc": accuracy, "accuracy": accuracy}
+def auc(real, pred):
+    pred = utils.logits_to_prob(pred)
+    fpr, tpr, _ = sk_metrics.roc_curve(real, pred)
+    return sk_metrics.auc(fpr, tpr)
+
+
+def recall(real, pred):
+    pred = utils.logits_to_class(pred)
+    return sk_metrics.recall_score(real, pred)
+
+
+def precision(real, pred):
+    pred = utils.logits_to_class(pred)
+    return sk_metrics.precision_score(real, pred)
+
+
+def auc_precision_recall(real, pred):
+    pred = utils.logits_to_prob(pred)
+    return sk_metrics.average_precision_score(real, pred)
+
+
+metrics = {
+    "acc": accuracy,
+    "accuracy": accuracy,
+    "auc": auc,
+    "auc_precision_recall": auc_precision_recall,
+    "precision": precision,
+    "recall": recall,
+}
 
 
 def get_metric(metric_name):
@@ -17,4 +48,4 @@ def get_metric(metric_name):
     if metric_name not in metrics:
         raise ValueError("Unknown metric {}".format(metric_name))
     else:
-        return losses[metric_name]
+        return metrics[metric_name]
