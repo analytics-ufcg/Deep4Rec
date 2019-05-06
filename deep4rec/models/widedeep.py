@@ -7,7 +7,6 @@ Author: Steffen Rendle, Osaka University
 """
 
 import tensorflow as tf
-import tensorflow.contrib.eager as tfe
 
 from deep4rec.models.model import Model
 
@@ -36,9 +35,11 @@ class Deep(Model):
 
 
 class WideDeep(Model):
-    def __init__(self, ds, num_units=256, deep_model=None, wide_model=None):
+    def __init__(self, ds, num_units=8, deep_model=None, wide_model=None):
         super(WideDeep, self).__init__()
-        self.deep_model = deep_model if deep_model else Deep()
+        self.deep_model = (
+            deep_model if deep_model else Deep(hidden_units=[100, 75, 50, 25])
+        )
         self.wide_model = wide_model if wide_model else Wide()
 
         self._num_weights = ds.num_features_one_hot
@@ -54,38 +55,46 @@ class WideDeep(Model):
         self.flat = tf.keras.layers.Flatten()
         self.last_layer = tf.keras.layers.Dense(1)
 
-    def call(self, one_hot_features, dense_features=None, wide_features=None):
+    def call(
+        self,
+        dense_features=None,
+        wide_features=None,
+        one_hot_features=None,
+        training: bool = True,
+    ):
         """
         Args:
-            one_hot_features: A dense tensor of shape [batch_size, self._num_features]
-                that indicates which features should be embedded.
             dense_features: A dense tensor of shape [batch_size, None] with other
                 dense features. If None is not used.
             wide_features: A dense tensor of shape [batch_size, None] with wide
                 features. If None is not used. Which means there's no wide model.
-
+            one_hot_features: A dense tensor of shape [batch_size, self._num_features]
+                that indicates which features should be embedded.
+            training: A boolean indicating if is training or not.
         Returns:
             Logits.
         """
         embeddings = self.embedding(one_hot_features)
-        embeddings = self.flat(embeddings)
+        embeddings = tf.cast(self.flat(embeddings), dtype=tf.float32)
 
-        if dense_features:
+        if dense_features is not None:
+            dense_features = tf.cast(dense_features, dtype=tf.float32)
             dense_features = tf.keras.layers.concatenate([embeddings, dense_features])
         else:
             dense_features = embeddings
 
         if dense_features is not None and wide_features is not None:
+            wide_features = tf.cast(wide_features, dtype=tf.float32)
             logits = tf.keras.layers.concatenate(
                 [self.deep_model(dense_features), self.wide_model(wide_features)]
             )
         elif dense_features is not None:
             logits = self.deep_model(dense_features)
         elif wide_features is not None:
+            wide_features = tf.cast(wide_features, dtype=tf.float32)
             logits = self.wide_model(wide_features)
 
         logits = self.last_layer(logits)
-
         return logits
 
     @property
