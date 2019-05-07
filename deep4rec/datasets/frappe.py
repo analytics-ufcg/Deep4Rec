@@ -74,12 +74,16 @@ class FrappeDataset(Dataset):
         return x, y
 
     @property
-    def train_size(self):
-        return len(self.train_data)
+    def train_features(self):
+        return [self.train_data]
 
     @property
-    def train(self):
-        return (self.train_data, self.train_y)
+    def test_features(self):
+        return [self.test_data]
+
+    @property
+    def train_size(self):
+        return len(self.train_data)
 
     @property
     def num_features_one_hot(self):
@@ -88,7 +92,3 @@ class FrappeDataset(Dataset):
     @property
     def num_features(self):
         return len(self.train_data[0])
-
-    @property
-    def test(self):
-        return (self.test_data, self.test_y)

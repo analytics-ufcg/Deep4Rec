@@ -14,5 +14,6 @@ model.train(
     batch_size=128,
     epochs=200,
     loss_function="l2",
+    eval_loss_functions=["rmse"],
     optimizer=tf.train.AdagradOptimizer(learning_rate=0.05),
 )

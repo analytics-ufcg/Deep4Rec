@@ -26,12 +26,12 @@ class Dataset(ABC):
         self.verbose = verbose
 
     def _make_tf_dataset(
-        self, data, target, shuffle=True, buffer_size=1000, batch_size=32
+        self, features, target, shuffle=True, buffer_size=1000, batch_size=32
     ):
         """Make a TensorFlow dataset.
 
         Args:
-            data: A numpy array containing features.
+            features: A list of numpy array containing features.
             target: A Numpy Array indicating the target.
             shuffle: A boolean indicating if the dataset should shuffled or not.
             buffer_size: An integer indicating the buffer size. Used only when shuffling.
@@ -41,7 +41,7 @@ class Dataset(ABC):
         Returns:
             A TensorFlow Dataset instance.
         """
-        ds = tf.data.Dataset.from_tensor_slices((data, target))
+        ds = tf.data.Dataset.from_tensor_slices((*features, target))
         if shuffle:
             ds = ds.shuffle(buffer_size=buffer_size)
         ds = ds.batch(batch_size)
@@ -65,13 +65,16 @@ class Dataset(ABC):
             if shuffle is None:
                 shuffle = True
             return self._make_tf_dataset(
-                self.train_data, self.train_y, batch_size=batch_size, shuffle=shuffle
+                self.train_features,
+                self.train_y,
+                batch_size=batch_size,
+                shuffle=shuffle,
             )
         elif data_partition == "test":
             if shuffle is None:
                 shuffle = False
             return self._make_tf_dataset(
-                self.test_data, self.test_y, batch_size=batch_size, shuffle=shuffle
+                self.test_features, self.test_y, batch_size=batch_size, shuffle=shuffle
             )
         else:
             raise ValueError("Unknown data partition {}".format(data_partition))
@@ -106,3 +109,6 @@ class Dataset(ABC):
     def maybe_preprocess(self):
         if not self.check_preprocessed():
             self.preprocess()
+
+    def build(self):
+        pass

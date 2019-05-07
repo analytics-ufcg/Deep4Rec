@@ -25,10 +25,14 @@ class Model(tf.keras.Model):
         optimizer="adam",
         run_eval=True,
         verbose=True,
+        eval_metrics=None,
         eval_loss_functions=None,
     ):
         if eval_loss_functions is None:
-            eval_loss_functions = ["rmse"]
+            eval_loss_functions = []
+
+        if eval_metrics is None:
+            eval_metrics = []
 
         train_ds = ds.make_tf_dataset("train", batch_size=batch_size)
         test_ds = ds.make_tf_dataset("test", batch_size=batch_size)
@@ -38,9 +42,9 @@ class Model(tf.keras.Model):
 
         for epoch in tqdm(range(epochs)):
             start = time.time()
-            for (data, target) in train_ds:
+            for (*features, target) in train_ds:
                 with tf.GradientTape() as tape:
-                    pred_rating = self.call(data, training=True)
+                    pred_rating = self.call(*features, training=True)
                     loss = loss_function(target, pred_rating)
                 gradients = tape.gradient(loss, self.real_variables)
                 optimizer.apply_gradients(
@@ -49,32 +53,38 @@ class Model(tf.keras.Model):
                 )
 
             if verbose:
-                train_losses, _ = self.eval(
-                    train_ds, loss_functions=eval_loss_functions
+                train_losses, metrics = self.eval(
+                    train_ds, loss_functions=eval_loss_functions, metrics=eval_metrics
                 )
                 print(
                     "Epoch {}, Losses {}, Time: {:2f} (s)".format(
                         epoch + 1, train_losses, time.time() - start
                     )
                 )
+                for metric_name in metrics:
+                    print("{}: {}".format(metric_name, metrics[metric_name]))
 
                 if run_eval:
-                    test_losses, _ = self.eval(
-                        test_ds, loss_functions=eval_loss_functions
+                    test_losses, metrics = self.eval(
+                        test_ds,
+                        loss_functions=eval_loss_functions,
+                        metrics=eval_metrics,
                     )
                     print("Test Losses {}".format(test_losses))
+                    for metric_name in metrics:
+                        print("{}: {}".format(metric_name, metrics[metric_name]))
 
     def eval(self, ds, loss_functions=[], metrics=None, verbose=False):
         if not metrics:
             metrics = []
 
-        loss_functions = utils.names_to_fn(loss_functions, get_eval_loss_fn)
-        metrics = utils.names_to_fn(metrics, get_metric)
+        loss_functions_fn = utils.names_to_fn(loss_functions, get_eval_loss_fn)
+        metrics_fn = utils.names_to_fn(metrics, get_metric)
 
         start = time.time()
         predictions, targets = [], []
-        for (data, target) in ds:
-            pred_rating = self.call(data, training=False).numpy().flatten()
+        for (*features, target) in ds:
+            pred_rating = self.call(*features, training=False).numpy().flatten()
             predictions.extend(list(pred_rating))
             targets.extend(list(target.numpy().flatten()))
 
@@ -82,12 +92,12 @@ class Model(tf.keras.Model):
             print("Time to evaluate dataset = {} secs\n".format(time.time() - start))
 
         loss_function_res = []
-        for loss_function in loss_functions:
-            loss_function_res.append(loss_function(predictions, targets))
+        for loss_function_fn in loss_functions_fn:
+            loss_function_res.append(loss_function_fn(targets, predictions))
 
-        metrics_res = []
-        for metric in metrics:
-            metrics_res.append(metric(predictions, targets))
+        metrics_res = {}
+        for metric_name, metric_fn in zip(metrics, metrics_fn):
+            metrics_res[metric_name] = metric_fn(targets, predictions)
 
         return loss_function_res, metrics_res
 

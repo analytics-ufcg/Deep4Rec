@@ -28,7 +28,7 @@ class MovieLens100kDataset(Dataset):
 
     def download(self):
         super(MovieLens100kDataset, self).download()
-        utils.maybe_unzip(self.zip_path)
+        utils.maybe_uncompress(self.zip_path)
 
     def check_downloaded(self):
         return os.path.exists(self.zip_path)
@@ -37,7 +37,7 @@ class MovieLens100kDataset(Dataset):
         return False
 
     def preprocess(self):
-        utils.maybe_unzip(self.zip_path)
+        utils.maybe_uncompress(self.zip_path)
         self.train_data, self.train_y, self.train_users, self.train_items = self._load_data(
             "ua.base", train_data=True
         )
@@ -65,12 +65,16 @@ class MovieLens100kDataset(Dataset):
         return (vect_data, np.array(y), users, items)
 
     @property
-    def train_size(self):
-        return len(self.train_data)
+    def train_features(self):
+        return [self.train_data]
 
     @property
-    def train(self):
-        return (self.train_data, self.train_y, self.train_users, self.train_items)
+    def test_features(self):
+        return [self.test_data]
+
+    @property
+    def train_size(self):
+        return len(self.train_data)
 
     @property
     def users(self):
@@ -87,7 +91,3 @@ class MovieLens100kDataset(Dataset):
     @property
     def num_features(self):
         return 2
-
-    @property
-    def test(self):
-        return (self.test_data, self.test_y, self.test_users, self.test_items)
