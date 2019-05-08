@@ -74,13 +74,16 @@ class WideDeep(Model):
         Returns:
             Logits.
         """
-        embeddings = self.embedding(one_hot_features)
-        embeddings = tf.cast(self.flat(embeddings), dtype=tf.float32)
+        if one_hot_features is not None:
+            embeddings = self.embedding(one_hot_features)
+            embeddings = tf.cast(self.flat(embeddings), dtype=tf.float32)
 
         if dense_features is not None:
             dense_features = tf.cast(dense_features, dtype=tf.float32)
+
+        if one_hot_features is not None and dense_features is not None:
             dense_features = tf.keras.layers.concatenate([embeddings, dense_features])
-        else:
+        elif one_hot_features is not None:
             dense_features = embeddings
 
         if dense_features is not None and wide_features is not None:
