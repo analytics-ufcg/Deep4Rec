@@ -14,8 +14,8 @@ class Dataset(ABC):
 
     This class is responsible for dowloading the data, preprocessing it,
     and serve it using the following attributes:
-        - self.train_data, self.train_y
-        - self.test_data, self.test_y
+        - self.train_features, self.train_y
+        - self.test_features, self.test_y
     """
 
     url = None

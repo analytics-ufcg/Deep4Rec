@@ -79,9 +79,9 @@ class CensusDataset(Dataset):
         self.test_filename = "adult.test"
 
         self.train_url = os.path.join(self.url, self.train_filename)
-        self.train_path = os.path.join(self.output_dir, self.train_filename)
-
         self.test_url = os.path.join(self.url, self.test_filename)
+
+        self.train_path = os.path.join(self.output_dir, self.train_filename)
         self.test_path = os.path.join(self.output_dir, self.test_filename)
 
         self.preprocessed_path = os.path.join(self.output_dir, self.dataset_name)

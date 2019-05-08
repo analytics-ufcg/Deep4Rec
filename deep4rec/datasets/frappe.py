@@ -35,7 +35,7 @@ class FrappeDataset(Dataset):
 
     def preprocess(self):
         self.features_M = self.map_features()
-        self.construct_data("otherloss")
+        self.construct_data()
 
     def check_preprocessed(self):
         return False
@@ -58,7 +58,7 @@ class FrappeDataset(Dataset):
                         last_index += 1
                 line = f.readline()
 
-    def construct_data(self, loss_type):
+    def construct_data(self):
         self.train_data, self.train_y = self.read_data(self.train_file)
         self.test_data, self.test_y = self.read_data(self.test_file)
 
