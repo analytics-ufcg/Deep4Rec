@@ -79,9 +79,9 @@ class CensusDataset(Dataset):
         self.test_filename = "adult.test"
 
         self.train_url = os.path.join(self.url, self.train_filename)
-        self.train_path = os.path.join(self.output_dir, self.train_filename)
-
         self.test_url = os.path.join(self.url, self.test_filename)
+
+        self.train_path = os.path.join(self.output_dir, self.train_filename)
         self.test_path = os.path.join(self.output_dir, self.test_filename)
 
         self.preprocessed_path = os.path.join(self.output_dir, self.dataset_name)
@@ -106,6 +106,8 @@ class CensusDataset(Dataset):
         tf.gfile.Remove(temp_file)
 
     def download(self):
+        if not os.path.exists(self.output_dir):
+            os.mkdir(self.output_dir)
         self._download_and_clean_file(self.train_url, self.train_path)
         self._download_and_clean_file(self.test_url, self.test_path)
 

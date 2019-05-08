@@ -53,26 +53,23 @@ class Model(tf.keras.Model):
                 )
 
             if verbose:
-                train_losses, metrics = self.eval(
+                train_losses, train_metrics = self.eval(
                     train_ds, loss_functions=eval_loss_functions, metrics=eval_metrics
                 )
                 print(
-                    "Epoch {}, Losses {}, Time: {:2f} (s)".format(
-                        epoch + 1, train_losses, time.time() - start
-                    )
+                    "Epoch {}, Time: {:2f} (s)".format(epoch + 1, time.time() - start)
                 )
-                for metric_name in metrics:
-                    print("{}: {}".format(metric_name, metrics[metric_name]))
+                self._print_res("Train Losses", train_losses)
+                self._print_res("Train Metrics", train_metrics)
 
                 if run_eval:
-                    test_losses, metrics = self.eval(
+                    test_losses, test_metrics = self.eval(
                         test_ds,
                         loss_functions=eval_loss_functions,
                         metrics=eval_metrics,
                     )
-                    print("Test Losses {}".format(test_losses))
-                    for metric_name in metrics:
-                        print("{}: {}".format(metric_name, metrics[metric_name]))
+                    self._print_res("Test Losses", test_losses)
+                    self._print_res("Test Metrics", test_metrics)
 
     def eval(self, ds, loss_functions=[], metrics=None, verbose=False):
         if not metrics:
@@ -91,15 +88,24 @@ class Model(tf.keras.Model):
         if verbose:
             print("Time to evaluate dataset = {} secs\n".format(time.time() - start))
 
-        loss_function_res = []
-        for loss_function_fn in loss_functions_fn:
-            loss_function_res.append(loss_function_fn(targets, predictions))
+        loss_function_res = {}
+        for loss_function_name, loss_function_fn in zip(
+            loss_functions, loss_functions_fn
+        ):
+            loss_function_res[loss_function_name] = loss_function_fn(
+                targets, predictions
+            )
 
         metrics_res = {}
         for metric_name, metric_fn in zip(metrics, metrics_fn):
             metrics_res[metric_name] = metric_fn(targets, predictions)
 
         return loss_function_res, metrics_res
+
+    def _print_res(self, res_title, res_dict):
+        print("------------ {} ------------".format(res_title))
+        for res_name in res_dict:
+            print("{}: {:4f}".format(res_name, res_dict[res_name]))
 
     def call(self, *args, **kwargs):
         raise NotImplementedError
