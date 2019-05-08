@@ -13,7 +13,7 @@ from deep4rec import utils
 
 # TensorFlow losses
 def tf_mse(target, pred):
-    target = tf.reshape(tf.to_float(target), (-1, 1))
+    target = tf.reshape(tf.cast(target, dtype=tf.float32), (-1, 1))
     return tf.losses.mean_squared_error(target, pred)
 
 
@@ -22,12 +22,12 @@ def tf_rmse(target, pred):
 
 
 def tf_l2(target, pred):
-    target = tf.reshape(tf.to_float(target), (-1, 1))
+    target = tf.reshape(tf.cast(target, dtype=tf.float32), (-1, 1))
     return tf.nn.l2_loss(target - pred)
 
 
 def tf_binary_cross_entropy(target, pred):
-    target = tf.reshape(tf.to_float(target), (-1, 1))
+    target = tf.reshape(tf.cast(target, dtype=tf.float32), (-1, 1))
     return tf.nn.sigmoid_cross_entropy_with_logits(labels=target, logits=pred)
 
 
