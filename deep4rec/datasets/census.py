@@ -106,6 +106,8 @@ class CensusDataset(Dataset):
         tf.gfile.Remove(temp_file)
 
     def download(self):
+        if not os.path.exists(self.output_dir):
+            os.mkdir(self.output_dir)
         self._download_and_clean_file(self.train_url, self.train_path)
         self._download_and_clean_file(self.test_url, self.test_path)
 
