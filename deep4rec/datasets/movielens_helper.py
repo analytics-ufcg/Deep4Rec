@@ -342,7 +342,9 @@ def _check_buffers(data_dir, dataset):
 
 
 def _preprocess_df(df):
-    wide_columns = np.array([list(v) for v in df[["genres"]].values])
+    wide_columns = np.array([list(v) for v in df[["genres"]].values]).reshape(
+        -1, NUM_GENRES
+    )
     embedding_columns = df[["user_id", "item_id"]].values
     target = df[["rating"]].values / MAX_RATING
     return wide_columns, embedding_columns, target
