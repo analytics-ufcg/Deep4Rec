@@ -1,6 +1,6 @@
-"""Dataset interface for MovieLens 20M dataset.
+"""Dataset interface for MovieLens  dataset.
 
-MovieLens 20M dataset: https://grouplens.org/datasets/movielens/20m/
+MovieLens dataset: https://grouplens.org/datasets/movielens/
 """
 
 import os
@@ -13,7 +13,7 @@ from deep4rec.datasets import movielens_helper as ml_helper
 import deep4rec.utils as utils
 
 
-class MovieLens20mDataset(Dataset):
+class MovieLensDataset(Dataset):
     def __init__(self, dataset_name, output_dir, *args, **kwargs):
         super().__init__(dataset_name, output_dir, *args, **kwargs)
 
