@@ -14,8 +14,7 @@ def accuracy(real, pred):
 
 def auc(real, pred):
     pred = utils.logits_to_prob(pred)
-    fpr, tpr, _ = sk_metrics.roc_curve(real, pred)
-    return sk_metrics.auc(fpr, tpr)
+    return sk_metrics.roc_auc_score(real, pred)
 
 
 def recall(real, pred):
