@@ -57,7 +57,7 @@ class FM(Model):
         if self.apply_dropout:
             self.dropout = tf.keras.layers.Dropout(dropout_prob)
 
-    def call(self, one_hot_features, training, features=None):
+    def call(self, one_hot_features, training=False, features=None, **kwargs):
         """Forward pass.
 
         Args:

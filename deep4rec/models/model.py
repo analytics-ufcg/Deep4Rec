@@ -16,6 +16,14 @@ class Model(tf.keras.Model):
     def __init__(self):
         super(Model, self).__init__()
 
+    def _features_dict(self, features):
+        features_dict = {}
+        for feature_name, feature in zip(
+            ["one_hot_features", "wide_features", "dense_features"], features
+        ):
+            features_dict[feature_name] = feature
+        return features_dict
+
     def train(
         self,
         ds,
@@ -44,7 +52,9 @@ class Model(tf.keras.Model):
             start = time.time()
             for (*features, target) in train_ds:
                 with tf.GradientTape() as tape:
-                    pred_rating = self.call(*features, training=True)
+                    pred_rating = self.call(
+                        **self._features_dict(features), training=True
+                    )
                     loss = loss_function(target, pred_rating)
                 gradients = tape.gradient(loss, self.real_variables)
                 optimizer.apply_gradients(
@@ -81,7 +91,11 @@ class Model(tf.keras.Model):
         start = time.time()
         predictions, targets = [], []
         for (*features, target) in ds:
-            pred_rating = self.call(*features, training=False).numpy().flatten()
+            pred_rating = (
+                self.call(**self._features_dict(features), training=False)
+                .numpy()
+                .flatten()
+            )
             predictions.extend(list(pred_rating))
             targets.extend(list(target.numpy().flatten()))
 

@@ -80,7 +80,7 @@ class NeuralFM(Model):
         )
         self.bias = tfe.Variable(tf.constant(0.0))
 
-    def call(self, one_hot_features, training, features=None):
+    def call(self, one_hot_features, training=False, features=None, **kwargs):
         """
         Args:
             one_hot_features: A dense tensor of shape [batch_size, self._num_features]

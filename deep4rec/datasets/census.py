@@ -158,20 +158,15 @@ class CensusDataset(Dataset):
 
         labels = np.where(df["income_bracket"].values == ">50K", 1, 0)
 
-        if train_data:
-            self.train_wide_data = wide_columns
-            self.train_deep_data = deep_columns
-            self.train_embedding_data = occupation_column
-            self.train_y = labels
-        else:
-            self.test_wide_data = wide_columns
-            self.test_deep_data = deep_columns
-            self.test_embedding_data = occupation_column
-            self.test_y = labels
+        return wide_columns, deep_columns, occupation_column, labels
 
     def preprocess(self):
-        self._preprocess(self.train_path, train_data=True)
-        self._preprocess(self.test_path)
+        self.train_wide_data, self.train_deep_data, self.train_embedding_data, self.train_y = self._preprocess(
+            self.train_path, train_data=True
+        )
+        self.test_wide_data, self.test_deep_data, self.test_embedding_data, self.test_y = self._preprocess(
+            self.test_path, train_data=False
+        )
 
     @property
     def train_size(self):
@@ -179,11 +174,11 @@ class CensusDataset(Dataset):
 
     @property
     def train_features(self):
-        return [self.train_wide_data, self.train_deep_data, self.train_embedding_data]
+        return [self.train_embedding_data, self.train_wide_data, self.train_deep_data]
 
     @property
     def test_features(self):
-        return [self.test_wide_data, self.test_deep_data, self.test_embedding_data]
+        return [self.test_embedding_data, self.test_wide_data, self.test_deep_data]
 
     @property
     def num_features_one_hot(self):
