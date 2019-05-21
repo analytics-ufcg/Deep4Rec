@@ -10,7 +10,7 @@ import tensorflow as tf
 ds = datasets.build_dataset("ml-1m")
 
 # Model
-model = models.NeuralFM(ds)
+model = models.WideDeep(ds)
 
 model.train(
     ds,

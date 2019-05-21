@@ -346,7 +346,7 @@ def _preprocess_df(df):
         -1, NUM_GENRES
     )
     embedding_columns = df[["user_id", "item_id"]].values
-    target = df[["rating"]].values / MAX_RATING
+    target = df[["rating"]].values
     return wide_columns, embedding_columns, target
 
 
