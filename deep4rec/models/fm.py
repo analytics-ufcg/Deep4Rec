@@ -3,7 +3,7 @@ Implementation of Factorization Machines.
 
 Paper: Factorization Machines
 link: https://www.csie.ntu.edu.tw/~b97053/paper/Rendle2010FM.pdf
-Author: Steffen Rendle, Osaka University
+Authors: Steffen Rendle, Osaka University
 """
 
 import tensorflow as tf
