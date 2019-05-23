@@ -20,10 +20,19 @@ class Dataset(ABC):
 
     url = None
 
-    def __init__(self, dataset_name, output_dir, verbose=True, *args, **kwargs):
-        self.dataset_name = dataset_name
+    def __init__(
+        self,
+        dataset_name,
+        output_dir,
+        verbose=True,
+        uses_neg_sampling=False,
+        *args,
+        **kwargs
+    ):
+        self.dataset_name = dataset_name.replace("-neg", "")
         self.output_dir = output_dir
         self.verbose = verbose
+        self.uses_neg_sampling = uses_neg_sampling
 
     def _make_tf_dataset(
         self, features, target, shuffle=True, buffer_size=1000, batch_size=32

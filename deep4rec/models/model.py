@@ -49,6 +49,11 @@ class Model(tf.keras.Model):
         optimizer = utils.name_to_fn(optimizer, build_optimizer)
 
         for epoch in tqdm(range(epochs)):
+            # Deal with negative sampling each epoch
+            if ds.uses_neg_sampling:
+                train_ds = ds.make_tf_dataset("train", batch_size=batch_size)
+
+            # Training loop
             start = time.time()
             for (*features, target) in train_ds:
                 with tf.GradientTape() as tape:
@@ -62,24 +67,24 @@ class Model(tf.keras.Model):
                     tf.train.get_or_create_global_step(),
                 )
 
-            if verbose:
+            # Evaluation
+            if run_eval:
                 train_losses, train_metrics = self.eval(
                     train_ds, loss_functions=eval_loss_functions, metrics=eval_metrics
                 )
+                test_losses, test_metrics = self.eval(
+                    test_ds, loss_functions=eval_loss_functions, metrics=eval_metrics
+                )
+
+            # Print evaluation metrics and losses
+            if verbose:
                 print(
                     "Epoch {}, Time: {:2f} (s)".format(epoch + 1, time.time() - start)
                 )
                 self._print_res("Train Losses", train_losses)
                 self._print_res("Train Metrics", train_metrics)
-
-                if run_eval:
-                    test_losses, test_metrics = self.eval(
-                        test_ds,
-                        loss_functions=eval_loss_functions,
-                        metrics=eval_metrics,
-                    )
-                    self._print_res("Test Losses", test_losses)
-                    self._print_res("Test Metrics", test_metrics)
+                self._print_res("Test Losses", test_losses)
+                self._print_res("Test Metrics", test_metrics)
 
     def eval(self, ds, loss_functions=[], metrics=None, verbose=False):
         if not metrics:

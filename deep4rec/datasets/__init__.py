@@ -6,6 +6,7 @@ from deep4rec.datasets.census import CensusDataset
 from deep4rec.datasets.frappe import FrappeDataset
 from deep4rec.datasets.ml100k import MovieLens100kDataset
 from deep4rec.datasets.ml import MovieLensDataset
+from deep4rec.datasets.clf_negative import ClfNegativeSamplingDataset
 import deep4rec.utils as utils
 
 datasets = {
@@ -13,6 +14,7 @@ datasets = {
     "frappe": FrappeDataset,
     "ml-100k": MovieLens100kDataset,
     "ml-1m": MovieLensDataset,
+    "ml-1m-neg": ClfNegativeSamplingDataset,
     "ml-20m": MovieLensDataset,
 }
 
