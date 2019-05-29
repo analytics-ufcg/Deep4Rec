@@ -5,6 +5,8 @@ from deep4rec import models
 ds = datasets.build_dataset("ml-100k")
 
 # Model
-model = models.FM(ds)
+model = models.FM(ds, num_units=8, l2_regularizer=0.1)
 
-model.train(ds, epochs=1000, loss_function="rmse", optimizer="adam")
+model.train(
+    ds, epochs=4, loss_function="rmse", optimizer="adam", eval_loss_functions=["rmse"]
+)
