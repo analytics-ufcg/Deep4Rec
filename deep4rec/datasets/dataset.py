@@ -4,6 +4,7 @@ from abc import ABC
 from abc import abstractmethod
 from enum import Enum
 import logging
+from typing import List
 
 import tensorflow as tf
 
@@ -13,7 +14,6 @@ import deep4rec.utils as utils
 class DatasetTask(Enum):
     CLASSIFICATION = 1
     REGRESSION = 2
-
 
 
 class Dataset(ABC):
@@ -27,8 +27,15 @@ class Dataset(ABC):
 
     url = None
 
-    def __init__(self, dataset_name, output_dir, verbose=True, task=DatasetTask.REGRESSION,
-                 *args, **kwargs):
+    def __init__(
+        self,
+        dataset_name,
+        output_dir,
+        verbose=True,
+        task=DatasetTask.REGRESSION,
+        *args,
+        **kwargs
+    ):
         self.dataset_name = dataset_name
         self.output_dir = output_dir
         self.verbose = verbose
@@ -56,13 +63,21 @@ class Dataset(ABC):
         ds = ds.batch(batch_size)
         return ds
 
-    def make_tf_dataset(self, data_partition, batch_size=32, shuffle=None):
+    def make_tf_dataset(
+        self,
+        data_partition: str,
+        batch_size: int = 32,
+        shuffle: bool = None,
+        indexes: List[int] = None,
+    ):
         """Make a TensorFlow dataset for a data partition.
 
         Args:
             data_partition: A string (train | test).
             batch_size: Batch size.
             shuffle: A boolean indicating if the dataset should be shuffled.
+            indexes: A list of integer restricting which examples should be used
+                to compose the dataset.
 
         Returns:
             A TensorFlow Dataset instance.
@@ -73,20 +88,30 @@ class Dataset(ABC):
         if data_partition == "train":
             if shuffle is None:
                 shuffle = True
-            return self._make_tf_dataset(
-                self.train_features,
-                self.train_y,
-                batch_size=batch_size,
-                shuffle=shuffle,
-            )
+
+            if indexes is not None:
+                features = [feature[indexes] for feature in self.train_features]
+                targets = self.train_y[indexes]
+            else:
+                features = self.train_features
+                targets = self.train_y
+
         elif data_partition == "test":
             if shuffle is None:
                 shuffle = False
-            return self._make_tf_dataset(
-                self.test_features, self.test_y, batch_size=batch_size, shuffle=shuffle
-            )
+
+            if indexes is not None:
+                features = [feature[indexes] for feature in self.test_features]
+                targets = self.test_y[indexes]
+            else:
+                features = self.test_features
+                targets = self.test_y
         else:
             raise ValueError("Unknown data partition {}".format(data_partition))
+
+        return self._make_tf_dataset(
+            features, targets, batch_size=batch_size, shuffle=shuffle
+        )
 
     def download(self, url=None):
         if not url:
