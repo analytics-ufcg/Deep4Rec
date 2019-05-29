@@ -1,9 +1,12 @@
 """
-Implementation of Factorization Machines.
+Implementation of Wide & Deep Learning.
 
-Paper: Factorization Machines
-link: https://www.csie.ntu.edu.tw/~b97053/paper/Rendle2010FM.pdf
-Author: Steffen Rendle, Osaka University
+Paper: Wide & Deep Learning for Recommender Systems
+link: https://arxiv.org/abs/1606.07792
+Authors: Heng-Tze Cheng, Levent Koc, Jeremiah Harmsen, Tal Shaked,
+Tushar Chandra, Hrishi Aradhye, Glen Anderson, Greg Corrado, Wei Chai,
+Mustafa Ispir, Rohan Anil, Zakaria Haque, Lichan Hong, Vihan Jain,
+Xiaobing Liu, Hemal Shah.
 """
 
 import tensorflow as tf
