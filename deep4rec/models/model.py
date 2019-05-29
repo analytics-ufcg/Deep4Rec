@@ -34,9 +34,10 @@ class Model(tf.keras.Model):
         batch_size=128,
         optimizer="adam",
         run_eval=True,
-        verbose=True,
+        verbose=False,
         eval_metrics=None,
         eval_loss_functions=None,
+        early_stop=True,
     ):
         kf = sk_model_selection.KFold(n_splits=n_splits)
         for i, (train_indexes, test_indexes) in enumerate(
@@ -59,6 +60,7 @@ class Model(tf.keras.Model):
                 eval_loss_functions=eval_loss_functions,
                 train_indexes=train_indexes,
                 test_indexes=test_indexes,
+                early_stop=early_stop,
             )
 
     def train(
@@ -69,17 +71,27 @@ class Model(tf.keras.Model):
         batch_size=128,
         optimizer="adam",
         run_eval=True,
-        verbose=True,
+        verbose=False,
         eval_metrics=None,
         eval_loss_functions=None,
         train_indexes=None,
         test_indexes=None,
+        early_stop=True,
     ):
         if eval_loss_functions is None:
             eval_loss_functions = []
 
+        if type(loss_function) == str:
+            eval_loss_functions = set(eval_loss_functions + [loss_function])
+
         if eval_metrics is None:
             eval_metrics = []
+
+        self.train_losses = []
+        self.test_losses = []
+
+        self.train_metrics = []
+        self.test_metrics = []
 
         if train_indexes is not None and test_indexes is not None:
             train_ds = ds.make_tf_dataset(
@@ -109,24 +121,55 @@ class Model(tf.keras.Model):
                     tf.train.get_or_create_global_step(),
                 )
 
-            if verbose:
-                train_losses, train_metrics = self.eval(
-                    train_ds, loss_functions=eval_loss_functions, metrics=eval_metrics
-                )
-                print(
-                    "Epoch {}, Time: {:2f} (s)".format(epoch + 1, time.time() - start)
-                )
+            print("Epoch {}, Time: {:2f} (s)".format(epoch + 1, time.time() - start))
+
+            train_losses, train_metrics = self.eval(
+                train_ds,
+                loss_functions=eval_loss_functions,
+                metrics=eval_metrics,
+                verbose=verbose,
+            )
+
+            if train_losses:
+                self.train_losses.append(train_losses)
                 self._print_res("Train Losses", train_losses)
+
+            if train_metrics:
+                self.train_metrics.append(train_metrics)
                 self._print_res("Train Metrics", train_metrics)
 
-                if run_eval:
-                    test_losses, test_metrics = self.eval(
-                        test_ds,
-                        loss_functions=eval_loss_functions,
-                        metrics=eval_metrics,
-                    )
+            if run_eval:
+                test_losses, test_metrics = self.eval(
+                    test_ds,
+                    loss_functions=eval_loss_functions,
+                    metrics=eval_metrics,
+                    verbose=verbose,
+                )
+
+                if test_losses:
                     self._print_res("Test Losses", test_losses)
+                    self.test_losses.append(test_losses)
+
+                if test_metrics:
                     self._print_res("Test Metrics", test_metrics)
+                    self.test_metrics.append(test_metrics)
+
+            # TODO: support early stop for custom loss function
+            if (
+                early_stop
+                and type(loss_function) == str
+                and self._eval_early_stop(loss_function)
+            ):
+                break
+
+    def _eval_early_stop(self, loss_name):
+        if len(self.test_losses) > 1:
+            print(self.test_losses[loss_name][-1], self.test_losses[loss_name][-2])
+            if (
+                self.test_losses[loss_name][-1] > self.test_losses[loss_name][-2]
+            ):  # and self.test_losses[-2] > self.test_losses[-3]:
+                return True
+        return False
 
     def eval(self, ds, loss_functions=[], metrics=None, verbose=False):
         if not metrics:
