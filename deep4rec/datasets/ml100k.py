@@ -9,6 +9,7 @@ import numpy as np
 from sklearn.preprocessing import OrdinalEncoder
 
 from deep4rec.datasets.dataset import Dataset
+from deep4rec.datasets.dataset import DatasetTask
 import deep4rec.utils as utils
 
 
@@ -42,18 +43,29 @@ class MovieLens100kDataset(Dataset):
             "ua.base", train_data=True
         )
         self.test_data, self.test_y, self.test_users, self.test_items = self._load_data(
-            "ua.test"
+            "ua.test", train_data=False,
         )
 
-    def _load_data(self, filename, train_data=True):
+    def _preprocess_target(self, target, th:int = 3):
+        if self.task == DatasetTask.REGRESSION:
+            return float(target)
+        elif self.task == DatasetTask.CLASSIFICATION:
+            return target >= th
+        else:
+            raise NotImplementedError('{} does not support {} task.'.format(self.dataset_name, self.task))
+
+    def _load_data(self, filename, train_data):
         data, y = [], []
         users, items = set(), set()
         filepath = os.path.join(self.preprocessed_path, filename)
         with open(filepath) as f:
             for line in f:
                 (user_id, movie_id, rating, _) = line.split("\t")
+                # Ignore items and users that are not in train_data
+                if not train_data and (user_id not in self.train_users or movie_id not in self.train_items):
+                    continue 
                 data.append([user_id, movie_id])
-                y.append(float(rating))
+                y.append(self._preprocess_target(rating))
                 users.add(user_id)
                 items.add(movie_id)
 

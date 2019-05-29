@@ -2,11 +2,18 @@
 
 from abc import ABC
 from abc import abstractmethod
+from enum import Enum
 import logging
 
 import tensorflow as tf
 
 import deep4rec.utils as utils
+
+
+class DatasetTask(Enum):
+    CLASSIFICATION = 1
+    REGRESSION = 2
+
 
 
 class Dataset(ABC):
@@ -20,10 +27,12 @@ class Dataset(ABC):
 
     url = None
 
-    def __init__(self, dataset_name, output_dir, verbose=True, *args, **kwargs):
+    def __init__(self, dataset_name, output_dir, verbose=True, task=DatasetTask.REGRESSION,
+                 *args, **kwargs):
         self.dataset_name = dataset_name
         self.output_dir = output_dir
         self.verbose = verbose
+        self.task = task
 
     def _make_tf_dataset(
         self, features, target, shuffle=True, buffer_size=1000, batch_size=32
