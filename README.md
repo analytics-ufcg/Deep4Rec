@@ -39,9 +39,9 @@ Deep4Rec is not affiliated to the official TensorFlow project in any way.
 
 Deep4Rec was developed mainly to accelerate research by providing a way for researchers to use previously proposed models as black boxes.
 
-# Supported models and datasets
+## Supported models and datasets
 
-## Models
+### Models
 
 | Model name  | Paper                                                                                                                        | Authors                       | Implementation                                             | Example                                                                  |
 |-------------|------------------------------------------------------------------------------------------------------------------------------|-------------------------------|------------------------------------------------------------|------------------------------------------------------------------------------|
@@ -49,9 +49,7 @@ Deep4Rec was developed mainly to accelerate research by providing a way for rese
 | NeuralFM    | [Neural Factorization Machines for Sparse Predictive Analytics](http://www.comp.nus.edu.sg/~xiangnan/papers/sigir17-nfm.pdf) | Xiangnan He and Tat-Seng Chua | [deep4rec/models/nfm.py](deep4rec/models/nfm.py)           | [examples/frappe_nfm.py](examples/frappe_nfm.py)                             |
 | Wide & Deep | [Wide & Deep Learning for Recommender Systems](https://arxiv.org/abs/1606.07792)                                             | Heng-Tze Cheng et al          | [deep4rec/models/widedeep.py](deep4rec/models/widedeep.py) | [examples/census_dataset_wide_deep.py](examples/census_dataset_wide_deep.py) |
 
-
-## Datasets
-
+### Datasets
 
 | Dataset Name          | Original Source                                                                                                              | Reference                                                                                                                    | Implementation                                           | Use example                                                                  |
 |-----------------------|------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|------------------------------------------------------------------------------|
