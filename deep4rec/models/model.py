@@ -3,6 +3,7 @@ import time
 from tqdm import tqdm
 
 import numpy as np
+import sklearn.model_selection as sk_model_selection
 import tensorflow as tf
 
 from deep4rec.models.loss_functions import get_tf_loss_fn
@@ -24,6 +25,44 @@ class Model(tf.keras.Model):
             features_dict[feature_name] = feature
         return features_dict
 
+    def kfold_train(
+        self,
+        ds,
+        epochs,
+        loss_function,
+        n_splits=3,
+        batch_size=128,
+        optimizer="adam",
+        run_eval=True,
+        verbose=False,
+        eval_metrics=None,
+        eval_loss_functions=None,
+        early_stop=True,
+    ):
+        kf = sk_model_selection.KFold(n_splits=n_splits)
+        for i, (train_indexes, test_indexes) in enumerate(
+            kf.split(list(range(ds.train_size)))
+        ):
+            print(
+                "{}/{} K-fold execution: train size = {}, test size = {}".format(
+                    i + 1, n_splits, len(train_indexes), len(test_indexes)
+                )
+            )
+            self.train(
+                ds,
+                epochs=epochs,
+                loss_function=loss_function,
+                batch_size=batch_size,
+                optimizer=optimizer,
+                run_eval=run_eval,
+                verbose=verbose,
+                eval_metrics=eval_metrics,
+                eval_loss_functions=eval_loss_functions,
+                train_indexes=train_indexes,
+                test_indexes=test_indexes,
+                early_stop=early_stop,
+            )
+
     def train(
         self,
         ds,
@@ -32,18 +71,41 @@ class Model(tf.keras.Model):
         batch_size=128,
         optimizer="adam",
         run_eval=True,
-        verbose=True,
+        verbose=False,
         eval_metrics=None,
         eval_loss_functions=None,
+        train_indexes=None,
+        test_indexes=None,
+        early_stop=True,
     ):
         if eval_loss_functions is None:
             eval_loss_functions = []
 
+        if type(loss_function) == str:
+            self.loss_function_name = loss_function
+            eval_loss_functions = set(eval_loss_functions + [loss_function])
+        else:
+            self.loss_function_name = "custom_loss_function"
+
         if eval_metrics is None:
             eval_metrics = []
 
-        train_ds = ds.make_tf_dataset("train", batch_size=batch_size)
-        test_ds = ds.make_tf_dataset("test", batch_size=batch_size)
+        self.train_losses = []
+        self.test_losses = []
+
+        self.train_metrics = []
+        self.test_metrics = []
+
+        if train_indexes is not None and test_indexes is not None:
+            train_ds = ds.make_tf_dataset(
+                "train", batch_size=batch_size, indexes=train_indexes
+            )
+            test_ds = ds.make_tf_dataset(
+                "train", batch_size=batch_size, indexes=test_indexes
+            )
+        else:
+            train_ds = ds.make_tf_dataset("train", batch_size=batch_size)
+            test_ds = ds.make_tf_dataset("test", batch_size=batch_size)
 
         loss_function = utils.name_to_fn(loss_function, get_tf_loss_fn)
         optimizer = utils.name_to_fn(optimizer, build_optimizer)
@@ -62,24 +124,52 @@ class Model(tf.keras.Model):
                     tf.train.get_or_create_global_step(),
                 )
 
-            if verbose:
-                train_losses, train_metrics = self.eval(
-                    train_ds, loss_functions=eval_loss_functions, metrics=eval_metrics
-                )
-                print(
-                    "Epoch {}, Time: {:2f} (s)".format(epoch + 1, time.time() - start)
-                )
+            print("Epoch {}, Time: {:2f} (s)".format(epoch + 1, time.time() - start))
+
+            train_losses, train_metrics = self.eval(
+                train_ds,
+                loss_functions=eval_loss_functions,
+                metrics=eval_metrics,
+                verbose=verbose,
+            )
+
+            if train_losses:
+                self.train_losses.append(train_losses)
                 self._print_res("Train Losses", train_losses)
+
+            if train_metrics:
+                self.train_metrics.append(train_metrics)
                 self._print_res("Train Metrics", train_metrics)
 
-                if run_eval:
-                    test_losses, test_metrics = self.eval(
-                        test_ds,
-                        loss_functions=eval_loss_functions,
-                        metrics=eval_metrics,
-                    )
+            if run_eval:
+                test_losses, test_metrics = self.eval(
+                    test_ds,
+                    loss_functions=eval_loss_functions,
+                    metrics=eval_metrics,
+                    verbose=verbose,
+                )
+
+                if test_losses:
                     self._print_res("Test Losses", test_losses)
+                    self.test_losses.append(test_losses)
+
+                if test_metrics:
                     self._print_res("Test Metrics", test_metrics)
+                    self.test_metrics.append(test_metrics)
+
+            if early_stop and self._eval_early_stop():
+                break
+
+    def _eval_early_stop(self):
+        if len(self.test_losses) > 3:
+            if (
+                self.test_losses[-1][self.loss_function_name]
+                > self.test_losses[-2][self.loss_function_name]
+                and self.test_losses[-2][self.loss_function_name]
+                > self.test_losses[-3][self.loss_function_name]
+            ):
+                return True
+        return False
 
     def eval(self, ds, loss_functions=[], metrics=None, verbose=False):
         if not metrics:

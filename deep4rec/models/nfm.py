@@ -21,7 +21,7 @@ class NeuralFM(Model):
         ds,
         num_units=64,
         layers=None,
-        drop_prob=None,
+        dropout_prob=None,
         apply_batchnorm=True,
         activation_fn="relu",
         apply_dropout=True,
@@ -32,15 +32,15 @@ class NeuralFM(Model):
         self._num_units = num_units
         self._num_features = ds.num_features
 
-        if layers and drop_prob and apply_dropout:
-            assert len(layers) + 1 == len(drop_prob)
+        if layers and dropout_prob and apply_dropout:
+            assert len(layers) + 1 == len(dropout_prob)
 
         if layers is None:
             layers = [64]
 
-        if drop_prob is None:
-            drop_prob = [0.8, 0.5]
-        self.drop_prob = drop_prob
+        if dropout_prob is None:
+            dropout_prob = [0.8, 0.5]
+        self.dropout_prob = dropout_prob
 
         self.apply_batchnorm = apply_batchnorm
         self.apply_dropout = apply_dropout
@@ -57,10 +57,10 @@ class NeuralFM(Model):
             ]
 
         if self.apply_dropout:
-            self.fm_dropout = tf.keras.layers.Dropout(self.drop_prob[-1])
+            self.fm_dropout = tf.keras.layers.Dropout(self.dropout_prob[-1])
             self.dense_dropout = [
-                tf.keras.layers.Dropout(self.drop_prob[i])
-                for i in range(len(drop_prob) - 1)
+                tf.keras.layers.Dropout(self.dropout_prob[i])
+                for i in range(len(dropout_prob) - 1)
             ]
 
         self.w = tf.keras.layers.Embedding(
