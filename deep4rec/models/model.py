@@ -82,7 +82,10 @@ class Model(tf.keras.Model):
             eval_loss_functions = []
 
         if type(loss_function) == str:
+            self.loss_function_name = loss_function
             eval_loss_functions = set(eval_loss_functions + [loss_function])
+        else:
+            self.loss_function_name = "custom_loss_function"
 
         if eval_metrics is None:
             eval_metrics = []
@@ -154,20 +157,17 @@ class Model(tf.keras.Model):
                     self._print_res("Test Metrics", test_metrics)
                     self.test_metrics.append(test_metrics)
 
-            # TODO: support early stop for custom loss function
-            if (
-                early_stop
-                and type(loss_function) == str
-                and self._eval_early_stop(loss_function)
-            ):
+            if early_stop and self._eval_early_stop():
                 break
 
-    def _eval_early_stop(self, loss_name):
-        if len(self.test_losses) > 1:
-            print(self.test_losses[loss_name][-1], self.test_losses[loss_name][-2])
+    def _eval_early_stop(self):
+        if len(self.test_losses) > 3:
             if (
-                self.test_losses[loss_name][-1] > self.test_losses[loss_name][-2]
-            ):  # and self.test_losses[-2] > self.test_losses[-3]:
+                self.test_losses[-1][self.loss_function_name]
+                > self.test_losses[-2][self.loss_function_name]
+                and self.test_losses[-2][self.loss_function_name]
+                > self.test_losses[-3][self.loss_function_name]
+            ):
                 return True
         return False
 
