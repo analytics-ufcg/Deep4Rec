@@ -122,6 +122,10 @@ class Dataset(ABC):
             )
         utils.download(url, self.output_dir)
 
+    def kfold_iterator(self, n_splits, test_size=0.1, random_state=0):
+        """Segregate training dataset in `n_splits`-fold."""
+        raise NotImplementedError
+
     @abstractmethod
     def preprocess(self):
         raise NotImplementedError

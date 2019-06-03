@@ -39,9 +39,8 @@ class Model(tf.keras.Model):
         eval_loss_functions=None,
         early_stop=True,
     ):
-        kf = sk_model_selection.KFold(n_splits=n_splits)
         for i, (train_indexes, test_indexes) in enumerate(
-            kf.split(list(range(ds.train_size)))
+            ds.kfold_iterator(n_splits=n_splits)
         ):
             print(
                 "{}/{} K-fold execution: train size = {}, test size = {}".format(
