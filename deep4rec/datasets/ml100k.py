@@ -28,7 +28,9 @@ class MovieLens100kDataset(Dataset):
         self.preprocessed_path = os.path.join(self.output_dir, self.dataset_name)
 
         # Used to map users and items to indexes
-        self._ord_encoder = OrdinalEncoder()
+        self._counter = 0
+        self.user_index = {}
+        self.item_index = {}
 
         # Stores users -> items in train data
         self.users_items = {}
@@ -76,18 +78,24 @@ class MovieLens100kDataset(Dataset):
                     user_id not in self.train_users or movie_id not in self.train_items
                 ):
                     continue
-                data.append([user_id, movie_id])
+
+                if user_id not in self.user_index:
+                    self.user_index[user_id] = self._counter
+                    self._counter += 1
+
+                if movie_id not in self.item_index:
+                    self.item_index[movie_id] = self._counter
+                    self._counter += 1
+
+                data.append([self.user_index[user_id], self.item_index[movie_id]])
                 y.append(self._preprocess_target(rating))
                 users.add(user_id)
                 items.add(movie_id)
 
         if is_train:
-            vect_data = self._ord_encoder.fit_transform(data)
-            self._store_users_items(vect_data)
-        else:
-            vect_data = self._ord_encoder.transform(data)
+            self._store_users_items(data)
 
-        return (vect_data, np.array(y), users, items)
+        return (np.array(data), np.array(y), users, items)
 
     def _store_users_items(self, vect_data):
         for i, (user, item) in enumerate(vect_data):
