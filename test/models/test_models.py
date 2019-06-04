@@ -61,3 +61,23 @@ class TestModels(custom_asserts.CustomAssertions):
 
         # check if all weights are being updated
         self.assertModelWeightsChanged(weights_after_1_epochs, weights_after_5_epochs)
+
+    def test_wide_deep_weights(self):
+        model = models.WideDeep(self.ds)
+
+        # force weights creation
+        # TODO: find a way to do this without training
+        model.train(
+            self.ds, epochs=1, loss_function="mse", optimizer="adam", verbose=False
+        )
+
+        layers = set()
+        for layer in model.layers:
+            layers.add(layer.name)
+            if hasattr(layer, "layers"):
+                for inner_layer in layer.layers:
+                    layers.add(inner_layer.name)
+
+        assert "deep_dense_0" in layers
+        assert "deep_dense_1" in layers
+        assert "wide" in layers

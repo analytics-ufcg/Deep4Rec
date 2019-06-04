@@ -17,7 +17,7 @@ from deep4rec.models.model import Model
 class Wide(Model):
     def __init__(self):
         super(Wide, self).__init__()
-        self.dense = tf.keras.layers.Dense(1)
+        self.dense = tf.keras.layers.Dense(1, name="wide")
 
     def call(self, wide_data):
         return self.dense(wide_data)
@@ -28,7 +28,10 @@ class Deep(Model):
         super(Deep, self).__init__()
         self.hidden_units = hidden_units if hidden_units else [256, 128, 64]
         self.dense_layers = [
-            tf.keras.layers.Dense(h, activation=activation) for h in self.hidden_units
+            tf.keras.layers.Dense(
+                h, name=("deep_dense_" + str(i)), activation=activation
+            )
+            for i, h in enumerate(self.hidden_units)
         ]
 
     def call(self, dense_data):
@@ -40,7 +43,7 @@ class Deep(Model):
 class WideDeep(Model):
     def __init__(self, ds, num_units=8, deep_model=None, wide_model=None, **kwargs):
         super(WideDeep, self).__init__()
-        self.deep_model = deep_model if deep_model else Deep(hidden_units=[10])
+        self.deep_model = deep_model if deep_model else Deep(hidden_units=[8, 8])
         self.wide_model = wide_model if wide_model else Wide()
 
         self._num_weights = ds.num_features_one_hot
