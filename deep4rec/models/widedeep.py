@@ -38,11 +38,9 @@ class Deep(Model):
 
 
 class WideDeep(Model):
-    def __init__(self, ds, num_units=8, deep_model=None, wide_model=None):
+    def __init__(self, ds, num_units=8, deep_model=None, wide_model=None, **kwargs):
         super(WideDeep, self).__init__()
-        self.deep_model = (
-            deep_model if deep_model else Deep(hidden_units=[100, 75, 50, 25])
-        )
+        self.deep_model = deep_model if deep_model else Deep(hidden_units=[10])
         self.wide_model = wide_model if wide_model else Wide()
 
         self._num_weights = ds.num_features_one_hot

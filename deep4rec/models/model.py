@@ -34,14 +34,13 @@ class Model(tf.keras.Model):
         batch_size=128,
         optimizer="adam",
         run_eval=True,
-        verbose=False,
+        verbose=True,
         eval_metrics=None,
         eval_loss_functions=None,
         early_stop=True,
     ):
-        kf = sk_model_selection.KFold(n_splits=n_splits)
         for i, (train_indexes, test_indexes) in enumerate(
-            kf.split(list(range(ds.train_size)))
+            ds.kfold_iterator(n_splits=n_splits)
         ):
             print(
                 "{}/{} K-fold execution: train size = {}, test size = {}".format(
@@ -71,7 +70,7 @@ class Model(tf.keras.Model):
         batch_size=128,
         optimizer="adam",
         run_eval=True,
-        verbose=False,
+        verbose=True,
         eval_metrics=None,
         eval_loss_functions=None,
         train_indexes=None,
@@ -111,6 +110,11 @@ class Model(tf.keras.Model):
         optimizer = utils.name_to_fn(optimizer, build_optimizer)
 
         for epoch in tqdm(range(epochs)):
+            # Deal with negative sampling each epoch
+            if ds.uses_neg_sampling:
+                train_ds = ds.make_tf_dataset("train", batch_size=batch_size)
+
+            # Training loop
             start = time.time()
             for (*features, target) in train_ds:
                 with tf.GradientTape() as tape:
@@ -124,38 +128,39 @@ class Model(tf.keras.Model):
                     tf.train.get_or_create_global_step(),
                 )
 
-            print("Epoch {}, Time: {:2f} (s)".format(epoch + 1, time.time() - start))
+            if verbose:
+                print(
+                    "Epoch {}, Time: {:2f} (s)".format(epoch + 1, time.time() - start)
+                )
 
             train_losses, train_metrics = self.eval(
-                train_ds,
-                loss_functions=eval_loss_functions,
-                metrics=eval_metrics,
-                verbose=verbose,
+                train_ds, loss_functions=eval_loss_functions, metrics=eval_metrics
             )
 
             if train_losses:
                 self.train_losses.append(train_losses)
-                self._print_res("Train Losses", train_losses)
+                if verbose:
+                    self._print_res("Train Losses", train_losses)
 
             if train_metrics:
                 self.train_metrics.append(train_metrics)
-                self._print_res("Train Metrics", train_metrics)
+                if verbose:
+                    self._print_res("Train Metrics", train_metrics)
 
             if run_eval:
                 test_losses, test_metrics = self.eval(
-                    test_ds,
-                    loss_functions=eval_loss_functions,
-                    metrics=eval_metrics,
-                    verbose=verbose,
+                    test_ds, loss_functions=eval_loss_functions, metrics=eval_metrics
                 )
 
                 if test_losses:
-                    self._print_res("Test Losses", test_losses)
                     self.test_losses.append(test_losses)
+                    if verbose:
+                        self._print_res("Test Losses", test_losses)
 
                 if test_metrics:
-                    self._print_res("Test Metrics", test_metrics)
                     self.test_metrics.append(test_metrics)
+                    if verbose:
+                        self._print_res("Test Metrics", test_metrics)
 
             if early_stop and self._eval_early_stop():
                 break
@@ -171,14 +176,13 @@ class Model(tf.keras.Model):
                 return True
         return False
 
-    def eval(self, ds, loss_functions=[], metrics=None, verbose=False):
+    def eval(self, ds, loss_functions=[], metrics=None):
         if not metrics:
             metrics = []
 
         loss_functions_fn = utils.names_to_fn(loss_functions, get_eval_loss_fn)
         metrics_fn = utils.names_to_fn(metrics, get_metric)
 
-        start = time.time()
         predictions, targets = [], []
         for (*features, target) in ds:
             pred_rating = (
@@ -188,9 +192,6 @@ class Model(tf.keras.Model):
             )
             predictions.extend(list(pred_rating))
             targets.extend(list(target.numpy().flatten()))
-
-        if verbose:
-            print("Time to evaluate dataset = {} secs\n".format(time.time() - start))
 
         loss_function_res = {}
         for loss_function_name, loss_function_fn in zip(
