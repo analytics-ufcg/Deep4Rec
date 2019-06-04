@@ -2,11 +2,18 @@
 
 from abc import ABC
 from abc import abstractmethod
+from enum import Enum
 import logging
+from typing import List
 
 import tensorflow as tf
 
 import deep4rec.utils as utils
+
+
+class DatasetTask(Enum):
+    CLASSIFICATION = 1
+    REGRESSION = 2
 
 
 class Dataset(ABC):
@@ -25,6 +32,7 @@ class Dataset(ABC):
         dataset_name,
         output_dir,
         verbose=True,
+        task=DatasetTask.REGRESSION,
         uses_neg_sampling=False,
         *args,
         **kwargs
@@ -32,7 +40,7 @@ class Dataset(ABC):
         self.dataset_name = dataset_name.replace("-neg", "")
         self.output_dir = output_dir
         self.verbose = verbose
-        self.uses_neg_sampling = uses_neg_sampling
+        self.task = task
 
     def _make_tf_dataset(
         self, features, target, shuffle=True, buffer_size=1000, batch_size=32
@@ -56,13 +64,21 @@ class Dataset(ABC):
         ds = ds.batch(batch_size)
         return ds
 
-    def make_tf_dataset(self, data_partition, batch_size=32, shuffle=None):
+    def make_tf_dataset(
+        self,
+        data_partition: str,
+        batch_size: int = 32,
+        shuffle: bool = None,
+        indexes: List[int] = None,
+    ):
         """Make a TensorFlow dataset for a data partition.
 
         Args:
             data_partition: A string (train | test).
             batch_size: Batch size.
             shuffle: A boolean indicating if the dataset should be shuffled.
+            indexes: A list of integer restricting which examples should be used
+                to compose the dataset.
 
         Returns:
             A TensorFlow Dataset instance.
@@ -73,20 +89,30 @@ class Dataset(ABC):
         if data_partition == "train":
             if shuffle is None:
                 shuffle = True
-            return self._make_tf_dataset(
-                self.train_features,
-                self.train_y,
-                batch_size=batch_size,
-                shuffle=shuffle,
-            )
+
+            if indexes is not None:
+                features = [feature[indexes] for feature in self.train_features]
+                targets = self.train_y[indexes]
+            else:
+                features = self.train_features
+                targets = self.train_y
+
         elif data_partition == "test":
             if shuffle is None:
                 shuffle = False
-            return self._make_tf_dataset(
-                self.test_features, self.test_y, batch_size=batch_size, shuffle=shuffle
-            )
+
+            if indexes is not None:
+                features = [feature[indexes] for feature in self.test_features]
+                targets = self.test_y[indexes]
+            else:
+                features = self.test_features
+                targets = self.test_y
         else:
             raise ValueError("Unknown data partition {}".format(data_partition))
+
+        return self._make_tf_dataset(
+            features, targets, batch_size=batch_size, shuffle=shuffle
+        )
 
     def download(self, url=None):
         if not url:
@@ -96,6 +122,10 @@ class Dataset(ABC):
                 "Downloading {} at {}".format(self.dataset_name, self.output_dir)
             )
         utils.download(url, self.output_dir)
+
+    def kfold_iterator(self, n_splits, test_size=0.1, random_state=0):
+        """Segregate training dataset in `n_splits`-fold."""
+        raise NotImplementedError
 
     @abstractmethod
     def preprocess(self):
