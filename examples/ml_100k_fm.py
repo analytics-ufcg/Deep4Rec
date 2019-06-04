@@ -1,3 +1,7 @@
+import os
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
 from deep4rec import datasets
 from deep4rec import models
 

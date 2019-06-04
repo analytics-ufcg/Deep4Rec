@@ -34,7 +34,7 @@ class Model(tf.keras.Model):
         batch_size=128,
         optimizer="adam",
         run_eval=True,
-        verbose=False,
+        verbose=True,
         eval_metrics=None,
         eval_loss_functions=None,
         early_stop=True,

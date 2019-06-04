@@ -25,23 +25,23 @@ class TestModels(custom_asserts.CustomAssertions):
         def _create_data(data, *args, **kwargs):
             if data == "train":
                 return _create_fake_data_iterator(
-                    tf.to_float([[1, 2], [2, 2], [2, 1]]), tf.to_float([[1], [1], [-1]])
+                    tf.to_float([[0, 2], [1, 2], [1, 3]]), tf.to_float([[1], [1], [-1]])
                 )
             elif data == "test":
                 return _create_fake_data_iterator(
-                    tf.to_float([[1, 1]]), tf.to_float([[1]])
+                    tf.to_float([[0, 3]]), tf.to_float([[1]])
                 )
 
         fake_ds = MagicMock()
-        fake_ds.num_features_one_hot = 5
+        fake_ds.num_features_one_hot = 4
         fake_ds.num_features = 2
 
         fake_ds.make_tf_dataset = MagicMock(side_effect=_create_data)
         return fake_ds
 
-    @parameterized.expand([[models.FM]])
+    @parameterized.expand([[models.FM], [models.NeuralFM], [models.WideDeep]])
     def test_train_regression(self, model_class):
-        model = model_class(self.ds)
+        model = model_class(self.ds, apply_batchnorm=False)
 
         # force weights creation
         # TODO: find a way to do this without training
