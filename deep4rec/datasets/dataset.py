@@ -41,9 +41,10 @@ class Dataset(ABC):
         self.output_dir = output_dir
         self.verbose = verbose
         self.task = task
+        self.uses_neg_sampling = uses_neg_sampling
 
     def _make_tf_dataset(
-        self, features, target, shuffle=True, buffer_size=1000, batch_size=32
+        self, features, target, shuffle=True, buffer_size=10000, batch_size=32
     ):
         """Make a TensorFlow dataset.
 
