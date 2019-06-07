@@ -36,7 +36,7 @@ class NeuralFM(Model):
             assert len(layers) + 1 == len(dropout_prob)
 
         if layers is None:
-            layers = [64]
+            layers = [64, 32]
 
         if dropout_prob is None:
             dropout_prob = [0.8, 0.5]
