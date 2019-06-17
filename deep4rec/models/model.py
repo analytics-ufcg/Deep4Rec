@@ -63,7 +63,7 @@ class Model(tf.keras.Model):
                 early_stop=early_stop,
             )
 
-            kfold_results.append((self.losses, self.metrics))
+            kfold_results.append((self._losses, self._metrics))
 
     def train(
         self,
@@ -92,8 +92,8 @@ class Model(tf.keras.Model):
         if eval_metrics is None:
             eval_metrics = []
 
-        self.losses = {"train": [], "valid": [], "test": []}
-        self.metrics = {"train": [], "valid": [], "test": []}
+        self._losses = {"train": [], "validation": [], "test": []}
+        self._metrics = {"train": [], "validation": [], "test": []}
 
         if train_indexes is not None and valid_indexes is not None:
             train_ds = ds.make_tf_dataset(
@@ -105,7 +105,7 @@ class Model(tf.keras.Model):
         else:
             train_ds = ds.make_tf_dataset("train", batch_size=batch_size)
             valid_ds = (
-                ds.make_tf_dataset("valid", batch_size=batch_size)
+                ds.make_tf_dataset("validation", batch_size=batch_size)
                 if ds.valid_features
                 else None
             )
@@ -143,7 +143,7 @@ class Model(tf.keras.Model):
                 "train", train_ds, eval_loss_functions, eval_metrics, verbose
             )
             self._eval_and_store_results(
-                "valid", valid_ds, eval_loss_functions, eval_metrics, verbose
+                "validation", valid_ds, eval_loss_functions, eval_metrics, verbose
             )
             if run_eval:
                 self._eval_and_store_results(
@@ -154,12 +154,12 @@ class Model(tf.keras.Model):
                 break
 
     def _eval_early_stop(self):
-        if len(self.losses) > 3:
+        if len(self._losses) > 3:
             if (
-                self.losses["test"][-1][self.loss_function_name]
-                > self.losses["test"][-2][self.loss_function_name]
-                and self.losses["test"][-2][self.loss_function_name]
-                > self.losses["test"][-3][self.loss_function_name]
+                self._losses["test"][-1][self.loss_function_name]
+                > self._losses["test"][-2][self.loss_function_name]
+                and self._losses["test"][-2][self.loss_function_name]
+                > self._losses["test"][-3][self.loss_function_name]
             ):
                 return True
         return False
@@ -171,12 +171,12 @@ class Model(tf.keras.Model):
             ds, loss_functions=eval_loss_functions, metrics=eval_metrics
         )
         if losses:
-            self.losses[ds_key].append(losses)
+            self._losses[ds_key].append(losses)
             if verbose:
                 self._print_res("%s losses" % ds_key, losses)
 
         if metrics:
-            self.metrics[ds_key].append(metrics)
+            self._metrics[ds_key].append(metrics)
             if verbose:
                 self._print_res("%s metrics" % ds_key, metrics)
 

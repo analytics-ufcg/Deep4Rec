@@ -98,7 +98,7 @@ class Dataset(ABC):
                 features = self.train_features
                 targets = self.train_y
 
-        elif data_partition == "valid":
+        elif data_partition == "validation":
             if shuffle is None:
                 shuffle = False
 
