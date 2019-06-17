@@ -48,6 +48,12 @@ def binary_cross_entropy(target, pred):
     return log_loss(target, prob_pred)
 
 
+def l2(target, pred, bound_pred=True):
+    if bound_pred:
+        pred = np.clip(pred, a_min=min(pred), a_max=max(pred))
+    return sum((np.array(target) - np.array(pred)) ** 2)
+
+
 tf_losses = {
     "binary_cross_entropy": tf_binary_cross_entropy,
     "mse": tf_mse,
@@ -55,7 +61,12 @@ tf_losses = {
     "l2": tf_l2,
 }
 
-eval_losses = {"mse": mse, "rmse": rmse, "binary_cross_entropy": binary_cross_entropy}
+eval_losses = {
+    "mse": mse,
+    "rmse": rmse,
+    "binary_cross_entropy": binary_cross_entropy,
+    "l2": l2,
+}
 
 
 def get_tf_loss_fn(loss_fn_name):
