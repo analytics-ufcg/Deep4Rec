@@ -98,6 +98,13 @@ class Dataset(ABC):
                 features = self.train_features
                 targets = self.train_y
 
+        elif data_partition == "valid":
+            if shuffle is None:
+                shuffle = False
+
+            features = self.valid_features
+            targets = self.valid_y
+
         elif data_partition == "test":
             if shuffle is None:
                 shuffle = False
@@ -152,3 +159,15 @@ class Dataset(ABC):
 
     def build(self):
         pass
+
+    @property
+    def train_features(self):
+        return None
+
+    @property
+    def test_features(self):
+        return None
+
+    @property
+    def valid_features(self):
+        return None
