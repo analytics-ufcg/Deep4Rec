@@ -36,10 +36,11 @@ class NeuralFM(Model):
             assert len(layers) + 1 == len(dropout_prob)
 
         if layers is None:
-            layers = [64, 32]
+            layers = [64]
 
         if dropout_prob is None:
             dropout_prob = [0.8, 0.5]
+
         self.dropout_prob = dropout_prob
 
         self.apply_batchnorm = apply_batchnorm
@@ -88,7 +89,6 @@ class NeuralFM(Model):
             training: A boolean indicating if is training or not.
             features: A dense tensor of shape [batch_size, self._num_features] that indicates
                 the value of each feature.
-
         Returns:
             Logits.
         """
@@ -115,9 +115,9 @@ class NeuralFM(Model):
         for i, layer in enumerate(self.dense_layers):
             fm = layer(fm)
             if self.apply_batchnorm:
-                fm = self.dense_batch_norm[i](fm)
+                fm = self.dense_batch_norm[i](fm, training=training)
             if self.apply_dropout:
-                fm = self.dense_dropout[i](fm)
+                fm = self.dense_dropout[i](fm, training=training)
 
         # Aggregate
         fm = self.final_dense_layer(fm)  # [batch_size, 1]
