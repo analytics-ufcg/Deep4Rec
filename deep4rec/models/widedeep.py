@@ -26,7 +26,7 @@ class Wide(Model):
 class Deep(Model):
     def __init__(self, hidden_units=None, activation="relu"):
         super(Deep, self).__init__()
-        self.hidden_units = hidden_units if hidden_units else [256, 128, 64]
+        self.hidden_units = hidden_units if hidden_units else [1024, 512, 256]
         self.dense_layers = [
             tf.keras.layers.Dense(
                 h, name=("deep_dense_" + str(i)), activation=activation

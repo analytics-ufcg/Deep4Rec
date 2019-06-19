@@ -1,12 +1,10 @@
 """
-Implementation of Neural Factorization Machines.
+Implementation of Neural Matrix Factorization (NeuMF) recommender model.
 
-Paper:  Neural Factorization Machines for Sparse Predictive Analytics.
-In Proceedings of SIGIR '17, Shinjuku, Tokyo, Japan, August 07-11, 2017.
+Paper: He Xiangnan et al. Neural Collaborative Filtering. In WWW 2017.
+Link: https://dl.acm.org/citation.cfm?id=3052569
 
-Link: http://www.comp.nus.edu.sg/~xiangnan/papers/sigir17-nfm.pdf
-
-Authors: Xiangnan He and Tat-Seng Chua (2017)
+Authors: Xiangnan He et al.
 """
 
 import tensorflow as tf
@@ -15,7 +13,7 @@ import tensorflow.contrib.eager as tfe
 from deep4rec.models.model import Model
 
 
-class NeuralFM(Model):
+class NeuralMF(Model):
     def __init__(
         self,
         ds,
@@ -27,7 +25,7 @@ class NeuralFM(Model):
         apply_dropout=True,
         l2_regularizer=0.0,
     ):
-        super(NeuralFM, self).__init__()
+        super(NeuralMF, self).__init__()
         self._num_weights = ds.num_features_one_hot
         self._num_units = num_units
         self._num_features = ds.num_features
@@ -64,7 +62,7 @@ class NeuralFM(Model):
                 for i in range(len(dropout_prob) - 1)
             ]
 
-        self.w = tf.keras.layers.Embedding(
+        self.mf_embedding = tf.keras.layers.Embedding(
             self._num_weights,
             num_units,
             input_length=self._num_features,
@@ -73,13 +71,17 @@ class NeuralFM(Model):
             ),
             embeddings_regularizer=tf.keras.regularizers.l2(l2_regularizer),
         )
-        self.w0 = tf.keras.layers.Embedding(
+        self.mlp_embedding = tf.keras.layers.Embedding(
             self._num_weights,
-            1,
+            num_units,
             input_length=self._num_features,
-            embeddings_initializer="zeros",
+            embeddings_initializer=tf.keras.initializers.RandomNormal(
+                mean=0.0, stddev=0.01
+            ),
+            embeddings_regularizer=tf.keras.regularizers.l2(l2_regularizer),
         )
-        self.bias = tfe.Variable(tf.constant(0.0))
+
+        self.flatten = tf.keras.layers.Flatten()
 
     def call(self, one_hot_features, training=False, features=None, **kwargs):
         """
@@ -92,37 +94,24 @@ class NeuralFM(Model):
         Returns:
             Logits.
         """
-        # TODO: add support to other features.
+        # Matrix Factorization
+        mf_latent = self.mf_embedding(
+            one_hot_features
+        )  # [batch_size, num_features, num_units]
+        mf_latent = tf.math.reduce_prod(mf_latent, axis=1)  # [batch_size, num_units]
 
-        # FM
-        weights = self.w(one_hot_features)  # [batch_size, num_features, num_units]
-
-        sum_nzw = tf.reduce_sum(weights, 1)  # [batch_size, num_units]
-        squared_sum_nzw = tf.square(sum_nzw)  # [batch_size, num_units]
-
-        squared_nzw = tf.square(weights)  # [batch_size, num_features, num_units]
-        sum_squared_nzw = tf.reduce_sum(squared_nzw, 1)  # [batch_size, num_units]
-
-        fm = 0.5 * (squared_sum_nzw - sum_squared_nzw)
-
-        if self.apply_batchnorm:
-            fm = self.batch_norm_layer(fm, training=training)
-
-        if self.apply_dropout:
-            fm = self.fm_dropout(fm, training=training)
-
-        # Dense layers on top of FM
+        # MLP
+        mlp_latent = self.flatten(
+            self.mlp_embedding(one_hot_features)
+        )  # [batch_size, num_features * num_units]
         for i, layer in enumerate(self.dense_layers):
-            fm = layer(fm)
+            mlp_latent = layer(mlp_latent)
             if self.apply_batchnorm:
-                fm = self.dense_batch_norm[i](fm, training=training)
+                mlp_latent = self.dense_batch_norm[i](mlp_latent, training=training)
             if self.apply_dropout:
-                fm = self.dense_dropout[i](fm, training=training)
+                mlp_latent = self.dense_dropout[i](mlp_latent, training=training)
 
-        # Aggregate
-        fm = self.final_dense_layer(fm)  # [batch_size, 1]
-        bilinear = tf.reduce_sum(fm, 1, keep_dims=True)  # [batch_size, 1]
-        weight_bias = tf.reduce_sum(self.w0(one_hot_features), 1)  # [batch_size, 1]
-        logits = tf.add_n([bilinear, weight_bias]) + self.bias
-
+        # Concatenate MF and MLP
+        logits = tf.keras.layers.concatenate([mf_latent, mlp_latent])
+        logits = self.final_dense_layer(logits)
         return logits

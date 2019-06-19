@@ -24,13 +24,12 @@ class TestModels(custom_asserts.CustomAssertions):
 
         def _create_data(data, *args, **kwargs):
             if data == "train":
-                return _create_fake_data_iterator(
-                    tf.to_float([[0, 2], [1, 2], [1, 3]]), tf.to_float([[1], [1], [-1]])
-                )
+                x = tf.to_float([[0, 2], [1, 2], [1, 3]])
+                y = tf.to_float([[1], [1], [0]])
             elif data == "test":
-                return _create_fake_data_iterator(
-                    tf.to_float([[0, 3]]), tf.to_float([[1]])
-                )
+                x = tf.to_float([[0, 2], [1, 3]])
+                y = tf.to_float([[1], [0]])
+            return _create_fake_data_iterator(x, y)
 
         fake_ds = MagicMock()
         fake_ds.num_features_one_hot = 4
@@ -58,6 +57,37 @@ class TestModels(custom_asserts.CustomAssertions):
 
         # check if loss decreased
         self.assertTestLossDecreases(model, "mse")
+
+        # check if all weights are being updated
+        self.assertModelWeightsChanged(weights_after_1_epochs, weights_after_5_epochs)
+
+    @parameterized.expand([[models.FM], [models.NeuralFM], [models.WideDeep]])
+    def test_train_classification(self, model_class):
+        model = model_class(self.ds, apply_batchnorm=False)
+
+        # force weights creation
+        # TODO: find a way to do this without training
+        model.train(
+            self.ds,
+            epochs=1,
+            loss_function="binary_cross_entropy",
+            optimizer="adam",
+            verbose=False,
+        )
+        weights_after_1_epochs = model.get_weights()
+
+        # train model
+        model.train(
+            self.ds,
+            epochs=5,
+            loss_function="binary_cross_entropy",
+            optimizer="adam",
+            verbose=False,
+        )
+        weights_after_5_epochs = model.get_weights()
+
+        # check if loss decreased
+        self.assertTestLossDecreases(model, "binary_cross_entropy")
 
         # check if all weights are being updated
         self.assertModelWeightsChanged(weights_after_1_epochs, weights_after_5_epochs)

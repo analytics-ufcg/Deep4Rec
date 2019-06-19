@@ -21,17 +21,24 @@ class FrappeDataset(Dataset):
         super(FrappeDataset, self).__init__(dataset_name, output_dir, *args, **kwargs)
 
         self.train_url = self.url + "frappe.train.libfm"
+        self.valid_url = self.url + "frappe.validation.libfm"
         self.test_url = self.url + "frappe.test.libfm"
 
         self.train_file = os.path.join(self.output_dir, "frappe.train.libfm")
+        self.valid_file = os.path.join(self.output_dir, "frappe.validation.libfm")
         self.test_file = os.path.join(self.output_dir, "frappe.test.libfm")
 
     def download(self):
         super(FrappeDataset, self).download(self.train_url)
+        super(FrappeDataset, self).download(self.valid_url)
         super(FrappeDataset, self).download(self.test_url)
 
     def check_downloaded(self):
-        return os.path.exists(self.train_file) and os.path.exists(self.test_file)
+        return (
+            os.path.exists(self.train_file)
+            and os.path.exists(self.valid_file)
+            and os.path.exists(self.test_file)
+        )
 
     def preprocess(self):
         self.features_M = self.map_features()
@@ -43,6 +50,7 @@ class FrappeDataset(Dataset):
     def map_features(self):
         self.features = {}
         self.read_features(self.train_file)
+        self.read_features(self.valid_file)
         self.read_features(self.test_file)
         return len(self.features)
 
@@ -60,6 +68,7 @@ class FrappeDataset(Dataset):
 
     def construct_data(self):
         self.train_data, self.train_y = self.read_data(self.train_file)
+        self.valid_data, self.valid_y = self.read_data(self.valid_file)
         self.test_data, self.test_y = self.read_data(self.test_file)
 
     def read_data(self, file_name):
@@ -80,6 +89,10 @@ class FrappeDataset(Dataset):
     @property
     def test_features(self):
         return [self.test_data]
+
+    @property
+    def valid_features(self):
+        return [self.valid_data]
 
     @property
     def train_size(self):
