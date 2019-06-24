@@ -1,11 +1,11 @@
-Welcome to Deep4Rec!
-===================================
-
-Contents:
+Welcome to Deep4Rec's documentation!
+====================================
 
 .. toctree::
    :maxdepth: 2
-   readme
+   :caption: Contents:
+
+
 
 Indices and tables
 ==================

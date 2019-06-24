@@ -1,0 +1,452 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>deep4rec.datasets.movielens_helper &#8212; Deep4Rec 0.0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Deep4Rec 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../datasets.html" accesskey="U">deep4rec.datasets</a> &#187;</li>
+      </ul>
+    </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+
+  <h1>Source code for deep4rec.datasets.movielens_helper</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2018 The TensorFlow Authors. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ==============================================================================</span>
+<span class="sd">&quot;&quot;&quot;Helper functions to download and extract the MovieLens dataset from GroupLens website.</span>
+
+<span class="sd">Download the dataset, and perform basic preprocessing.</span>
+
+<span class="sd">Code from: tensorflow/models.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">zipfile</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">six</span>
+<span class="kn">from</span> <span class="nn">six.moves</span> <span class="k">import</span> <span class="n">urllib</span>  <span class="c1"># pylint: disable=redefined-builtin</span>
+<span class="kn">from</span> <span class="nn">absl</span> <span class="k">import</span> <span class="n">app</span> <span class="k">as</span> <span class="n">absl_app</span>
+<span class="kn">from</span> <span class="nn">absl</span> <span class="k">import</span> <span class="n">flags</span>
+<span class="kn">from</span> <span class="nn">absl</span> <span class="k">import</span> <span class="n">logging</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+<span class="n">ML_1M</span> <span class="o">=</span> <span class="s2">&quot;ml-1m&quot;</span>
+<span class="n">ML_20M</span> <span class="o">=</span> <span class="s2">&quot;ml-20m&quot;</span>
+<span class="n">DATASETS</span> <span class="o">=</span> <span class="p">[</span><span class="n">ML_1M</span><span class="p">,</span> <span class="n">ML_20M</span><span class="p">]</span>
+
+<span class="n">_BUFFER_SUBDIR</span> <span class="o">=</span> <span class="s2">&quot;wide_deep_buffer&quot;</span>
+
+<span class="n">_BUFFER_SIZE</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">ML_1M</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="mi">107978119</span><span class="p">,</span> <span class="s2">&quot;eval&quot;</span><span class="p">:</span> <span class="mi">26994538</span><span class="p">},</span>
+    <span class="n">ML_20M</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="mi">2175203810</span><span class="p">,</span> <span class="s2">&quot;eval&quot;</span><span class="p">:</span> <span class="mi">543802008</span><span class="p">},</span>
+<span class="p">}</span>
+
+<span class="n">RATINGS_FILE</span> <span class="o">=</span> <span class="s2">&quot;ratings.csv&quot;</span>
+<span class="n">MOVIES_FILE</span> <span class="o">=</span> <span class="s2">&quot;movies.csv&quot;</span>
+
+<span class="c1"># URL to download dataset</span>
+<span class="n">_DATA_URL</span> <span class="o">=</span> <span class="s2">&quot;http://files.grouplens.org/datasets/movielens/&quot;</span>
+
+<span class="n">GENRE_COLUMN</span> <span class="o">=</span> <span class="s2">&quot;genres&quot;</span>
+<span class="n">ITEM_COLUMN</span> <span class="o">=</span> <span class="s2">&quot;item_id&quot;</span>  <span class="c1"># movies</span>
+<span class="n">RATING_COLUMN</span> <span class="o">=</span> <span class="s2">&quot;rating&quot;</span>
+<span class="n">TIMESTAMP_COLUMN</span> <span class="o">=</span> <span class="s2">&quot;timestamp&quot;</span>
+<span class="n">TITLE_COLUMN</span> <span class="o">=</span> <span class="s2">&quot;titles&quot;</span>
+<span class="n">USER_COLUMN</span> <span class="o">=</span> <span class="s2">&quot;user_id&quot;</span>
+
+<span class="n">MAX_RATING</span> <span class="o">=</span> <span class="mf">5.0</span>
+
+<span class="n">GENRES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;Action&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Adventure&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Animation&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Children&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Comedy&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Crime&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Documentary&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Drama&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Fantasy&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Film-Noir&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Horror&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;IMAX&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Musical&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Mystery&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Romance&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Sci-Fi&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Thriller&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;War&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Western&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+<span class="n">NUM_GENRES</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">GENRES</span><span class="p">)</span>
+
+<span class="n">RATING_COLUMNS</span> <span class="o">=</span> <span class="p">[</span><span class="n">USER_COLUMN</span><span class="p">,</span> <span class="n">ITEM_COLUMN</span><span class="p">,</span> <span class="n">RATING_COLUMN</span><span class="p">,</span> <span class="n">TIMESTAMP_COLUMN</span><span class="p">]</span>
+<span class="n">MOVIE_COLUMNS</span> <span class="o">=</span> <span class="p">[</span><span class="n">ITEM_COLUMN</span><span class="p">,</span> <span class="n">TITLE_COLUMN</span><span class="p">,</span> <span class="n">GENRE_COLUMN</span><span class="p">]</span>
+
+<span class="c1"># Note: Users are indexed [1, k], not [0, k-1]</span>
+<span class="n">NUM_USER_IDS</span> <span class="o">=</span> <span class="p">{</span><span class="n">ML_1M</span><span class="p">:</span> <span class="mi">6040</span><span class="p">,</span> <span class="n">ML_20M</span><span class="p">:</span> <span class="mi">138493</span><span class="p">}</span>
+
+<span class="c1"># Note: Movies are indexed [1, k], not [0, k-1]</span>
+<span class="c1"># Both the 1m and 20m datasets use the same movie set.</span>
+<span class="n">NUM_ITEM_IDS</span> <span class="o">=</span> <span class="mi">3952</span>
+
+<span class="n">MAX_RATING</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="n">NUM_RATINGS</span> <span class="o">=</span> <span class="p">{</span><span class="n">ML_1M</span><span class="p">:</span> <span class="mi">1000209</span><span class="p">,</span> <span class="n">ML_20M</span><span class="p">:</span> <span class="mi">20000263</span><span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">_download_and_clean</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Download MovieLens dataset in a standard format.</span>
+
+<span class="sd">  This function downloads the specified MovieLens format and coerces it into a</span>
+<span class="sd">  standard format. The only difference between the ml-1m and ml-20m datasets</span>
+<span class="sd">  after this point (other than size, of course) is that the 1m dataset uses</span>
+<span class="sd">  whole number ratings while the 20m dataset allows half integer ratings.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">dataset</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DATASETS</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;dataset </span><span class="si">{}</span><span class="s2"> is not in {{</span><span class="si">{}</span><span class="s2">}}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">DATASETS</span><span class="p">))</span>
+        <span class="p">)</span>
+
+    <span class="n">data_subdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span>
+
+    <span class="n">expected_files</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.zip&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset</span><span class="p">),</span> <span class="n">RATINGS_FILE</span><span class="p">,</span> <span class="n">MOVIES_FILE</span><span class="p">]</span>
+
+    <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">data_subdir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">expected_files</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">data_subdir</span><span class="p">))</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span>
+        <span class="n">expected_files</span>
+    <span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Dataset </span><span class="si">{}</span><span class="s2"> has already been downloaded&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset</span><span class="p">))</span>
+        <span class="k">return</span>
+
+    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">.zip&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_DATA_URL</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span>
+
+    <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">zip_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.zip&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset</span><span class="p">))</span>
+        <span class="n">zip_path</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">zip_path</span><span class="p">)</span>
+        <span class="n">statinfo</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">zip_path</span><span class="p">)</span>
+        <span class="c1"># A new line to clear the carriage return from download progress</span>
+        <span class="c1"># logging.info is not applicable here</span>
+        <span class="nb">print</span><span class="p">()</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Successfully downloaded </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> bytes&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">zip_path</span><span class="p">,</span> <span class="n">statinfo</span><span class="o">.</span><span class="n">st_size</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">zip_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">dataset</span> <span class="o">==</span> <span class="n">ML_1M</span><span class="p">:</span>
+            <span class="n">_regularize_1m_dataset</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_regularize_20m_dataset</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_subdir</span><span class="p">,</span> <span class="n">fname</span><span class="p">)):</span>
+                <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">fname</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_subdir</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Skipping copy of </span><span class="si">{}</span><span class="s2">, as it already exists in the &quot;</span>
+                    <span class="s2">&quot;destination folder.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+                <span class="p">)</span>
+
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_transform_csv</span><span class="p">(</span><span class="n">input_path</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">skip_first</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Transform csv to a regularized format.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    input_path: The path of the raw csv.</span>
+<span class="sd">    output_path: The path of the cleaned csv.</span>
+<span class="sd">    names: The csv column names.</span>
+<span class="sd">    skip_first: Boolean of whether to skip the first line of the raw csv.</span>
+<span class="sd">    separator: Character used to separate fields in the raw csv.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">six</span><span class="o">.</span><span class="n">PY2</span><span class="p">:</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">]</span>
+
+    <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">GFile</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_out</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">GFile</span><span class="p">(</span>
+        <span class="n">input_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span>
+    <span class="p">)</span> <span class="k">as</span> <span class="n">f_in</span><span class="p">:</span>
+
+        <span class="c1"># Write column names to the csv.</span>
+        <span class="n">f_out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+        <span class="n">f_out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">f_in</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">skip_first</span><span class="p">:</span>
+                <span class="k">continue</span>  <span class="c1"># ignore existing labels in the csv</span>
+
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">separator</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">separator</span> <span class="o">!=</span> <span class="s2">&quot;,&quot;</span><span class="p">:</span>
+                <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s1">&#39;&quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">field</span><span class="p">)</span> <span class="k">if</span> <span class="s2">&quot;,&quot;</span> <span class="ow">in</span> <span class="n">field</span> <span class="k">else</span> <span class="n">field</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span>
+                <span class="p">]</span>
+            <span class="n">f_out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_regularize_1m_dataset</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  ratings.dat</span>
+<span class="sd">    The file has no header row, and each line is in the following format:</span>
+<span class="sd">    UserID::MovieID::Rating::Timestamp</span>
+<span class="sd">      - UserIDs range from 1 and 6040</span>
+<span class="sd">      - MovieIDs range from 1 and 3952</span>
+<span class="sd">      - Ratings are made on a 5-star scale (whole-star ratings only)</span>
+<span class="sd">      - Timestamp is represented in seconds since midnight Coordinated Universal</span>
+<span class="sd">        Time (UTC) of January 1, 1970.</span>
+<span class="sd">      - Each user has at least 20 ratings</span>
+
+<span class="sd">  movies.dat</span>
+<span class="sd">    Each line has the following format:</span>
+<span class="sd">    MovieID::Title::Genres</span>
+<span class="sd">      - MovieIDs range from 1 and 3952</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+    <span class="n">working_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">ML_1M</span><span class="p">)</span>
+
+    <span class="n">_transform_csv</span><span class="p">(</span>
+        <span class="n">input_path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">working_dir</span><span class="p">,</span> <span class="s2">&quot;ratings.dat&quot;</span><span class="p">),</span>
+        <span class="n">output_path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">RATINGS_FILE</span><span class="p">),</span>
+        <span class="n">names</span><span class="o">=</span><span class="n">RATING_COLUMNS</span><span class="p">,</span>
+        <span class="n">skip_first</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">separator</span><span class="o">=</span><span class="s2">&quot;::&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">_transform_csv</span><span class="p">(</span>
+        <span class="n">input_path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">working_dir</span><span class="p">,</span> <span class="s2">&quot;movies.dat&quot;</span><span class="p">),</span>
+        <span class="n">output_path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">MOVIES_FILE</span><span class="p">),</span>
+        <span class="n">names</span><span class="o">=</span><span class="n">MOVIE_COLUMNS</span><span class="p">,</span>
+        <span class="n">skip_first</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">separator</span><span class="o">=</span><span class="s2">&quot;::&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">working_dir</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_regularize_20m_dataset</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  ratings.csv</span>
+<span class="sd">    Each line of this file after the header row represents one rating of one</span>
+<span class="sd">    movie by one user, and has the following format:</span>
+<span class="sd">    userId,movieId,rating,timestamp</span>
+<span class="sd">    - The lines within this file are ordered first by userId, then, within user,</span>
+<span class="sd">      by movieId.</span>
+<span class="sd">    - Ratings are made on a 5-star scale, with half-star increments</span>
+<span class="sd">      (0.5 stars - 5.0 stars).</span>
+<span class="sd">    - Timestamps represent seconds since midnight Coordinated Universal Time</span>
+<span class="sd">      (UTC) of January 1, 1970.</span>
+<span class="sd">    - All the users had rated at least 20 movies.</span>
+
+<span class="sd">  movies.csv</span>
+<span class="sd">    Each line has the following format:</span>
+<span class="sd">    MovieID,Title,Genres</span>
+<span class="sd">      - MovieIDs range from 1 and 3952</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+    <span class="n">working_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">ML_20M</span><span class="p">)</span>
+
+    <span class="n">_transform_csv</span><span class="p">(</span>
+        <span class="n">input_path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">working_dir</span><span class="p">,</span> <span class="s2">&quot;ratings.csv&quot;</span><span class="p">),</span>
+        <span class="n">output_path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">RATINGS_FILE</span><span class="p">),</span>
+        <span class="n">names</span><span class="o">=</span><span class="n">RATING_COLUMNS</span><span class="p">,</span>
+        <span class="n">skip_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">separator</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">_transform_csv</span><span class="p">(</span>
+        <span class="n">input_path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">working_dir</span><span class="p">,</span> <span class="s2">&quot;movies.csv&quot;</span><span class="p">),</span>
+        <span class="n">output_path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">MOVIES_FILE</span><span class="p">),</span>
+        <span class="n">names</span><span class="o">=</span><span class="n">MOVIE_COLUMNS</span><span class="p">,</span>
+        <span class="n">skip_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">separator</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">working_dir</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="download"><a class="viewcode-back" href="../../../docs/deep4rec.datasets.html#deep4rec.datasets.movielens_helper.download">[docs]</a><span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">dataset</span><span class="p">:</span>
+        <span class="n">_download_and_clean</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="p">[</span><span class="n">_download_and_clean</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">DATASETS</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="ratings_csv_to_dataframe"><a class="viewcode-back" href="../../../docs/deep4rec.datasets.html#deep4rec.datasets.movielens_helper.ratings_csv_to_dataframe">[docs]</a><span class="k">def</span> <span class="nf">ratings_csv_to_dataframe</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">dataset</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">GFile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">RATINGS_FILE</span><span class="p">))</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="csv_to_joint_dataframe"><a class="viewcode-back" href="../../../docs/deep4rec.datasets.html#deep4rec.datasets.movielens_helper.csv_to_joint_dataframe">[docs]</a><span class="k">def</span> <span class="nf">csv_to_joint_dataframe</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">dataset</span><span class="p">):</span>
+    <span class="n">ratings</span> <span class="o">=</span> <span class="n">ratings_csv_to_dataframe</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">GFile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">MOVIES_FILE</span><span class="p">))</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">movies</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">ratings</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">movies</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="n">ITEM_COLUMN</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="n">RATING_COLUMN</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">RATING_COLUMN</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">df</span></div>
+
+
+<div class="viewcode-block" id="integerize_genres"><a class="viewcode-back" href="../../../docs/deep4rec.datasets.html#deep4rec.datasets.movielens_helper.integerize_genres">[docs]</a><span class="k">def</span> <span class="nf">integerize_genres</span><span class="p">(</span><span class="n">dataframe</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replace genre string with a binary vector.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    dataframe: a pandas dataframe of movie data.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    The transformed dataframe.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_map_fn</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
+        <span class="n">entry</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;Children&#39;s&quot;</span><span class="p">,</span> <span class="s2">&quot;Children&quot;</span><span class="p">)</span>  <span class="c1"># naming difference.</span>
+        <span class="n">movie_genres</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">GENRES</span><span class="p">),),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">genre</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">GENRES</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">genre</span> <span class="ow">in</span> <span class="n">movie_genres</span><span class="p">:</span>
+                <span class="n">output</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="n">dataframe</span><span class="p">[</span><span class="n">GENRE_COLUMN</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataframe</span><span class="p">[</span><span class="n">GENRE_COLUMN</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">_map_fn</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dataframe</span></div>
+
+
+<span class="k">def</span> <span class="nf">_check_buffers</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">dataset</span><span class="p">):</span>
+    <span class="n">train_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">data_dir</span><span class="p">,</span> <span class="n">_BUFFER_SUBDIR</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">_buffer&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">eval_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">data_dir</span><span class="p">,</span> <span class="n">_BUFFER_SUBDIR</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">_buffer&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="s2">&quot;eval&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tf</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">train_path</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">tf</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">eval_path</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">Stat</span><span class="p">(</span><span class="n">_buffer_path</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">length</span>
+            <span class="o">==</span> <span class="n">_BUFFER_SIZE</span><span class="p">[</span><span class="n">dataset</span><span class="p">][</span><span class="s2">&quot;train&quot;</span><span class="p">],</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">Stat</span><span class="p">(</span><span class="n">_buffer_path</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="s2">&quot;eval&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">length</span>
+            <span class="o">==</span> <span class="n">_BUFFER_SIZE</span><span class="p">[</span><span class="n">dataset</span><span class="p">][</span><span class="s2">&quot;eval&quot;</span><span class="p">],</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_preprocess_df</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">wide_columns</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">list</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[[</span><span class="s2">&quot;genres&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+        <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">NUM_GENRES</span>
+    <span class="p">)</span>
+    <span class="n">embedding_columns</span> <span class="o">=</span> <span class="n">df</span><span class="p">[[</span><span class="s2">&quot;user_id&quot;</span><span class="p">,</span> <span class="s2">&quot;item_id&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">df</span><span class="p">[[</span><span class="s2">&quot;rating&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+    <span class="k">return</span> <span class="n">wide_columns</span><span class="p">,</span> <span class="n">embedding_columns</span><span class="p">,</span> <span class="n">target</span>
+
+
+<div class="viewcode-block" id="construct_subdatasets"><a class="viewcode-back" href="../../../docs/deep4rec.datasets.html#deep4rec.datasets.movielens_helper.construct_subdatasets">[docs]</a><span class="k">def</span> <span class="nf">construct_subdatasets</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Construct train and test input functions, as well as the column fn.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">_check_buffers</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">dataset</span><span class="p">):</span>
+        <span class="n">train_df</span><span class="p">,</span> <span class="n">eval_df</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">csv_to_joint_dataframe</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">integerize_genres</span><span class="p">(</span><span class="n">dataframe</span><span class="o">=</span><span class="n">df</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">TITLE_COLUMN</span><span class="p">])</span>
+
+        <span class="n">train_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">frac</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">eval_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">train_df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+        <span class="n">train_df</span> <span class="o">=</span> <span class="n">train_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">eval_df</span> <span class="o">=</span> <span class="n">eval_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">_preprocess_df</span><span class="p">(</span><span class="n">train_df</span><span class="p">),</span> <span class="n">_preprocess_df</span><span class="p">(</span><span class="n">eval_df</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Deep4Rec 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../datasets.html" >deep4rec.datasets</a> &#187;</li>
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Marianne Monteiro.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.2.
+    </div>
+  </body>
+</html>

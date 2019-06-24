@@ -14,7 +14,6 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../_static/language_data.js"></script>
 
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -42,14 +41,237 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="deep4rec-datasets-dataset-module">
-<h2>deep4rec.datasets.dataset module<a class="headerlink" href="#deep4rec-datasets-dataset-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-deep4rec.datasets.dataset">
+<span id="deep4rec-datasets-dataset-module"></span><h2>deep4rec.datasets.dataset module<a class="headerlink" href="#module-deep4rec.datasets.dataset" title="Permalink to this headline">¶</a></h2>
+<p>A dataset abstraction.</p>
+<dl class="class">
+<dt id="deep4rec.datasets.dataset.Dataset">
+<em class="property">class </em><code class="descclassname">deep4rec.datasets.dataset.</code><code class="descname">Dataset</code><span class="sig-paren">(</span><em>dataset_name</em>, <em>output_dir</em>, <em>verbose=True</em>, <em>task=&lt;DatasetTask.REGRESSION: 2&gt;</em>, <em>uses_neg_sampling=False</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/dataset.html#Dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.dataset.Dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></a></p>
+<p>Dataset abstraction.</p>
+<p>This class is responsible for dowloading the data, preprocessing it,
+and serve it using the following attributes:</p>
+<blockquote>
+<div><ul class="simple">
+<li>self.train_features, self.train_y</li>
+<li>self.test_features, self.test_y</li>
+</ul>
+</div></blockquote>
+<dl class="method">
+<dt id="deep4rec.datasets.dataset.Dataset.build">
+<code class="descname">build</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/dataset.html#Dataset.build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.dataset.Dataset.build" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deep4rec.datasets.dataset.Dataset.check_downloaded">
+<code class="descname">check_downloaded</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/dataset.html#Dataset.check_downloaded"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.dataset.Dataset.check_downloaded" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the downloaded files already exist in <cite>path</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deep4rec.datasets.dataset.Dataset.check_preprocessed">
+<code class="descname">check_preprocessed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/dataset.html#Dataset.check_preprocessed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.dataset.Dataset.check_preprocessed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the expected preprocessed files exist in <cite>path</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deep4rec.datasets.dataset.Dataset.download">
+<code class="descname">download</code><span class="sig-paren">(</span><em>url=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/dataset.html#Dataset.download"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.dataset.Dataset.download" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deep4rec.datasets.dataset.Dataset.kfold_iterator">
+<code class="descname">kfold_iterator</code><span class="sig-paren">(</span><em>n_splits</em>, <em>test_size=0.1</em>, <em>random_state=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/dataset.html#Dataset.kfold_iterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.dataset.Dataset.kfold_iterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Segregate training dataset in <cite>n_splits</cite>-fold.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deep4rec.datasets.dataset.Dataset.make_tf_dataset">
+<code class="descname">make_tf_dataset</code><span class="sig-paren">(</span><em>data_partition: str</em>, <em>batch_size: int = 32</em>, <em>shuffle: bool = None</em>, <em>indexes: List[int] = None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/dataset.html#Dataset.make_tf_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.dataset.Dataset.make_tf_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a TensorFlow dataset for a data partition.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data_partition</strong> – A string (train | test).</li>
+<li><strong>batch_size</strong> – Batch size.</li>
+<li><strong>shuffle</strong> – A boolean indicating if the dataset should be shuffled.</li>
+<li><strong>indexes</strong> – A list of integer restricting which examples should be used
+to compose the dataset.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A TensorFlow Dataset instance.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><strong>ValueError if data_partition is unknown.</strong> – </p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="deep4rec.datasets.dataset.Dataset.maybe_download">
+<code class="descname">maybe_download</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/dataset.html#Dataset.maybe_download"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.dataset.Dataset.maybe_download" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deep4rec.datasets.dataset.Dataset.maybe_preprocess">
+<code class="descname">maybe_preprocess</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/dataset.html#Dataset.maybe_preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.dataset.Dataset.maybe_preprocess" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deep4rec.datasets.dataset.Dataset.preprocess">
+<code class="descname">preprocess</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/dataset.html#Dataset.preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.dataset.Dataset.preprocess" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="deep4rec.datasets.dataset.Dataset.test_features">
+<code class="descname">test_features</code><a class="headerlink" href="#deep4rec.datasets.dataset.Dataset.test_features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="deep4rec.datasets.dataset.Dataset.train_features">
+<code class="descname">train_features</code><a class="headerlink" href="#deep4rec.datasets.dataset.Dataset.train_features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="deep4rec.datasets.dataset.Dataset.url">
+<code class="descname">url</code><em class="property"> = None</em><a class="headerlink" href="#deep4rec.datasets.dataset.Dataset.url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="deep4rec.datasets.dataset.Dataset.valid_features">
+<code class="descname">valid_features</code><a class="headerlink" href="#deep4rec.datasets.dataset.Dataset.valid_features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="deep4rec.datasets.dataset.DatasetTask">
+<em class="property">class </em><code class="descclassname">deep4rec.datasets.dataset.</code><code class="descname">DatasetTask</code><a class="reference internal" href="../../_modules/deep4rec/datasets/dataset.html#DatasetTask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.dataset.DatasetTask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.Enum" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></a></p>
+<p>An enumeration.</p>
+<dl class="attribute">
+<dt id="deep4rec.datasets.dataset.DatasetTask.CLASSIFICATION">
+<code class="descname">CLASSIFICATION</code><em class="property"> = 1</em><a class="headerlink" href="#deep4rec.datasets.dataset.DatasetTask.CLASSIFICATION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="deep4rec.datasets.dataset.DatasetTask.REGRESSION">
+<code class="descname">REGRESSION</code><em class="property"> = 2</em><a class="headerlink" href="#deep4rec.datasets.dataset.DatasetTask.REGRESSION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
-<div class="section" id="deep4rec-datasets-ml100k-module">
-<h2>deep4rec.datasets.ml100k module<a class="headerlink" href="#deep4rec-datasets-ml100k-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-deep4rec.datasets.ml100k">
+<span id="deep4rec-datasets-ml100k-module"></span><h2>deep4rec.datasets.ml100k module<a class="headerlink" href="#module-deep4rec.datasets.ml100k" title="Permalink to this headline">¶</a></h2>
+<p>Dataset interface for MovieLens 100k dataset.</p>
+<p>MovieLens 100k dataset: <a class="reference external" href="https://grouplens.org/datasets/movielens/100k/">https://grouplens.org/datasets/movielens/100k/</a></p>
+<dl class="class">
+<dt id="deep4rec.datasets.ml100k.MovieLens100kDataset">
+<em class="property">class </em><code class="descclassname">deep4rec.datasets.ml100k.</code><code class="descname">MovieLens100kDataset</code><span class="sig-paren">(</span><em>dataset_name</em>, <em>output_dir</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/ml100k.html#MovieLens100kDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.ml100k.MovieLens100kDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#deep4rec.datasets.dataset.Dataset" title="deep4rec.datasets.dataset.Dataset"><code class="xref py py-class docutils literal notranslate"><span class="pre">deep4rec.datasets.dataset.Dataset</span></code></a></p>
+<dl class="method">
+<dt id="deep4rec.datasets.ml100k.MovieLens100kDataset.check_downloaded">
+<code class="descname">check_downloaded</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/ml100k.html#MovieLens100kDataset.check_downloaded"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.ml100k.MovieLens100kDataset.check_downloaded" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the downloaded files already exist in <cite>path</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deep4rec.datasets.ml100k.MovieLens100kDataset.check_preprocessed">
+<code class="descname">check_preprocessed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/ml100k.html#MovieLens100kDataset.check_preprocessed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.ml100k.MovieLens100kDataset.check_preprocessed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the expected preprocessed files exist in <cite>path</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deep4rec.datasets.ml100k.MovieLens100kDataset.download">
+<code class="descname">download</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/ml100k.html#MovieLens100kDataset.download"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.ml100k.MovieLens100kDataset.download" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="deep4rec.datasets.ml100k.MovieLens100kDataset.items">
+<code class="descname">items</code><a class="headerlink" href="#deep4rec.datasets.ml100k.MovieLens100kDataset.items" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deep4rec.datasets.ml100k.MovieLens100kDataset.kfold_iterator">
+<code class="descname">kfold_iterator</code><span class="sig-paren">(</span><em>n_splits</em>, <em>test_size=0.1</em>, <em>random_state=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/ml100k.html#MovieLens100kDataset.kfold_iterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.ml100k.MovieLens100kDataset.kfold_iterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Segregate training dataset in <cite>n_splits</cite>-fold.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="deep4rec.datasets.ml100k.MovieLens100kDataset.num_features">
+<code class="descname">num_features</code><a class="headerlink" href="#deep4rec.datasets.ml100k.MovieLens100kDataset.num_features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="deep4rec.datasets.ml100k.MovieLens100kDataset.num_features_one_hot">
+<code class="descname">num_features_one_hot</code><a class="headerlink" href="#deep4rec.datasets.ml100k.MovieLens100kDataset.num_features_one_hot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deep4rec.datasets.ml100k.MovieLens100kDataset.preprocess">
+<code class="descname">preprocess</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets/ml100k.html#MovieLens100kDataset.preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.ml100k.MovieLens100kDataset.preprocess" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="deep4rec.datasets.ml100k.MovieLens100kDataset.test_features">
+<code class="descname">test_features</code><a class="headerlink" href="#deep4rec.datasets.ml100k.MovieLens100kDataset.test_features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="deep4rec.datasets.ml100k.MovieLens100kDataset.train_features">
+<code class="descname">train_features</code><a class="headerlink" href="#deep4rec.datasets.ml100k.MovieLens100kDataset.train_features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="deep4rec.datasets.ml100k.MovieLens100kDataset.train_size">
+<code class="descname">train_size</code><a class="headerlink" href="#deep4rec.datasets.ml100k.MovieLens100kDataset.train_size" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="deep4rec.datasets.ml100k.MovieLens100kDataset.url">
+<code class="descname">url</code><em class="property"> = 'http://files.grouplens.org/datasets/movielens/ml-100k.zip'</em><a class="headerlink" href="#deep4rec.datasets.ml100k.MovieLens100kDataset.url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="deep4rec.datasets.ml100k.MovieLens100kDataset.users">
+<code class="descname">users</code><a class="headerlink" href="#deep4rec.datasets.ml100k.MovieLens100kDataset.users" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
-<div class="section" id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-deep4rec.datasets">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-deep4rec.datasets" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="deep4rec.datasets.build_dataset">
+<code class="descclassname">deep4rec.datasets.</code><code class="descname">build_dataset</code><span class="sig-paren">(</span><em>dataset_name</em>, <em>output_dir=None</em>, <em>verbose=True</em>, <em>maybe_download=True</em>, <em>maybe_preprocess=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deep4rec/datasets.html#build_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deep4rec.datasets.build_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build Dataset instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dataset_name</strong> – A string indicating the dataset to be build.</li>
+<li><strong>output_dir</strong> – A string indicating the output directory used to store auxiliary files. If None,</li>
+<li><strong>the default path defined in utils.py will be used.</strong> (<em>then</em>) – </li>
+<li><strong>maybe_download</strong> – A boolean indicating if the files should be downloaded.</li>
+<li><strong>maybe_preprocess</strong> – A boolean indicating if the files should be preprocessed.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Dataset instance.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 </div>
 
@@ -63,9 +285,9 @@
   <ul>
 <li><a class="reference internal" href="#">deep4rec.datasets package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#deep4rec-datasets-dataset-module">deep4rec.datasets.dataset module</a></li>
-<li><a class="reference internal" href="#deep4rec-datasets-ml100k-module">deep4rec.datasets.ml100k module</a></li>
-<li><a class="reference internal" href="#module-contents">Module contents</a></li>
+<li><a class="reference internal" href="#module-deep4rec.datasets.dataset">deep4rec.datasets.dataset module</a></li>
+<li><a class="reference internal" href="#module-deep4rec.datasets.ml100k">deep4rec.datasets.ml100k module</a></li>
+<li><a class="reference internal" href="#module-deep4rec.datasets">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -107,7 +329,7 @@
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2019, Marianne Monteiro.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.2.
     </div>
   </body>
 </html>
