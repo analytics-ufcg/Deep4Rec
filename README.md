@@ -2,6 +2,8 @@
 
 Popular Deep Learning based recommendation algorithms built on top of TensorFlow served on a simple API.
 
+Documentation: [https://analytics-ufcg.github.io/Deep4Rec/html/index.html](https://analytics-ufcg.github.io/Deep4Rec/html/index.html)
+
 ```python
 
 from deep4rec import datasets
