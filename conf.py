@@ -54,6 +54,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
     "sphinxcontrib.napoleon",
+    "m2r",
 ]
 
 napoleon_google_docstring = True

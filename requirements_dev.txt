@@ -1,3 +1,4 @@
+m2r
 parameterized
 pre-commit
 pytest
