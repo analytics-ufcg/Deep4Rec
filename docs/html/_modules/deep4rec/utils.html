@@ -1,0 +1,225 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>deep4rec.utils &#8212; Deep4Rec 0.0.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Deep4Rec 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+      </ul>
+    </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+
+  <h1>Source code for deep4rec.utils</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Utilitiy functions.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">gzip</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">urllib.request</span>
+<span class="kn">import</span> <span class="nn">zipfile</span>
+
+
+<span class="n">DEFAULT_OUTPUT_DIR</span> <span class="o">=</span> <span class="s2">&quot;/tmp/deep4rec_data/&quot;</span>
+
+<span class="c1"># SECTION: Path related funtions</span>
+
+
+<div class="viewcode-block" id="parent_path"><a class="viewcode-back" href="../../docs/source/deep4rec.html#deep4rec.utils.parent_path">[docs]</a><span class="k">def</span> <span class="nf">parent_path</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Finds parent path.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      path: A string indicating a path.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A string indicating the parent path of `path`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="base_name"><a class="viewcode-back" href="../../docs/source/deep4rec.html#deep4rec.utils.base_name">[docs]</a><span class="k">def</span> <span class="nf">base_name</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Identifies base name of `path`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      path: A string indicating a path.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A string indicating the base name of `path`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="unzip"><a class="viewcode-back" href="../../docs/source/deep4rec.html#deep4rec.utils.unzip">[docs]</a><span class="k">def</span> <span class="nf">unzip</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Unzips a file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      file_path: A string indicating a zip file path.</span>
+<span class="sd">      output_path: A string indicating the parent file path. Optional, if</span>
+<span class="sd">      None then the output path will be the parent of `file_path`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">output_path</span><span class="p">:</span>
+        <span class="n">output_path</span> <span class="o">=</span> <span class="n">parent_path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+
+    <span class="n">zip_obj</span> <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+    <span class="n">maybe_mkdir</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span>
+    <span class="n">zip_obj</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ungz"><a class="viewcode-back" href="../../docs/source/deep4rec.html#deep4rec.utils.ungz">[docs]</a><span class="k">def</span> <span class="nf">ungz</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Uncompress .gz files.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      file_path: A string indicating a compressed file path.</span>
+<span class="sd">      output_path: A string indicating the parent file path. Optional, if</span>
+<span class="sd">      None then the output path will be the parent of `file_path`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">output_path</span><span class="p">:</span>
+        <span class="n">output_path</span> <span class="o">=</span> <span class="n">parent_path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+
+    <span class="n">maybe_mkdir</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span>
+
+    <span class="n">file_name</span> <span class="o">=</span> <span class="n">file_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.tar.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">file_name</span> <span class="o">=</span> <span class="n">file_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_in</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_out</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copyfileobj</span><span class="p">(</span><span class="n">f_in</span><span class="p">,</span> <span class="n">f_out</span><span class="p">)</span></div>
+
+
+<span class="n">uncompress_functions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;zip&quot;</span><span class="p">:</span> <span class="n">unzip</span><span class="p">,</span> <span class="s2">&quot;gz&quot;</span><span class="p">:</span> <span class="n">ungz</span><span class="p">,</span> <span class="s2">&quot;.tar.gz&quot;</span><span class="p">:</span> <span class="n">ungz</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="maybe_uncompress"><a class="viewcode-back" href="../../docs/source/deep4rec.html#deep4rec.utils.maybe_uncompress">[docs]</a><span class="k">def</span> <span class="nf">maybe_uncompress</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;If file path is a compressed file than uncompress it.&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">file_ext</span> <span class="ow">in</span> <span class="n">uncompress_functions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">file_path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">file_ext</span><span class="p">):</span>
+            <span class="n">uncompress_functions</span><span class="p">[</span><span class="n">file_ext</span><span class="p">](</span><span class="n">file_path</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">output_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="maybe_mkdir"><a class="viewcode-back" href="../../docs/source/deep4rec.html#deep4rec.utils.maybe_mkdir">[docs]</a><span class="k">def</span> <span class="nf">maybe_mkdir</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">is_file</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">dir_path</span> <span class="o">=</span> <span class="n">parent_path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="n">is_file</span> <span class="k">else</span> <span class="n">path</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dir_path</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dir_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="download"><a class="viewcode-back" href="../../docs/source/deep4rec.html#deep4rec.utils.download">[docs]</a><span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Download file from `url` and store at `output_path`.&quot;&quot;&quot;</span>
+    <span class="n">maybe_mkdir</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+    <span class="n">url_basename</span> <span class="o">=</span> <span class="n">base_name</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">url_basename</span><span class="p">))</span></div>
+
+
+<span class="c1"># SECTION: Name to function</span>
+
+
+<div class="viewcode-block" id="names_to_fn"><a class="viewcode-back" href="../../docs/source/deep4rec.html#deep4rec.utils.names_to_fn">[docs]</a><span class="k">def</span> <span class="nf">names_to_fn</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">mapper_fn</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">name_to_fn</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">mapper_fn</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="name_to_fn"><a class="viewcode-back" href="../../docs/source/deep4rec.html#deep4rec.utils.name_to_fn">[docs]</a><span class="k">def</span> <span class="nf">name_to_fn</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">mapper_fn</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;If needed maps a name to a function based on `mapper_fn`.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">fn</span> <span class="o">=</span> <span class="n">mapper_fn</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fn</span></div>
+
+
+<span class="c1"># SECTION: logits to pred/class</span>
+
+
+<div class="viewcode-block" id="logits_to_class"><a class="viewcode-back" href="../../docs/source/deep4rec.html#deep4rec.utils.logits_to_class">[docs]</a><span class="k">def</span> <span class="nf">logits_to_class</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">th</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">th</span></div>
+
+
+<div class="viewcode-block" id="softmax"><a class="viewcode-back" href="../../docs/source/deep4rec.html#deep4rec.utils.softmax">[docs]</a><span class="k">def</span> <span class="nf">softmax</span><span class="p">(</span><span class="n">z</span><span class="p">):</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>  <span class="c1"># necessary step to do broadcasting</span>
+    <span class="n">e_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">z</span> <span class="o">-</span> <span class="n">s</span><span class="p">)</span>
+    <span class="n">div</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">e_x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">div</span> <span class="o">=</span> <span class="n">div</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>  <span class="c1"># dito</span>
+    <span class="k">return</span> <span class="n">e_x</span> <span class="o">/</span> <span class="n">div</span></div>
+
+
+<div class="viewcode-block" id="sigmoid"><a class="viewcode-back" href="../../docs/source/deep4rec.html#deep4rec.utils.sigmoid">[docs]</a><span class="k">def</span> <span class="nf">sigmoid</span><span class="p">(</span><span class="n">z</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">z</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="logits_to_prob"><a class="viewcode-back" href="../../docs/source/deep4rec.html#deep4rec.utils.logits_to_prob">[docs]</a><span class="k">def</span> <span class="nf">logits_to_prob</span><span class="p">(</span><span class="n">pred</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">softmax</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Deep4Rec 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Marianne Monteiro.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.2.
+    </div>
+  </body>
+</html>

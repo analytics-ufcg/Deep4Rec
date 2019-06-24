@@ -1,0 +1,78 @@
+deep4rec.datasets package
+=========================
+
+Submodules
+----------
+
+deep4rec.datasets.amazon\_electronics module
+--------------------------------------------
+
+.. automodule:: deep4rec.datasets.amazon_electronics
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+deep4rec.datasets.census module
+-------------------------------
+
+.. automodule:: deep4rec.datasets.census
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+deep4rec.datasets.clf\_negative module
+--------------------------------------
+
+.. automodule:: deep4rec.datasets.clf_negative
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+deep4rec.datasets.dataset module
+--------------------------------
+
+.. automodule:: deep4rec.datasets.dataset
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+deep4rec.datasets.frappe module
+-------------------------------
+
+.. automodule:: deep4rec.datasets.frappe
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+deep4rec.datasets.ml module
+---------------------------
+
+.. automodule:: deep4rec.datasets.ml
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+deep4rec.datasets.ml100k module
+-------------------------------
+
+.. automodule:: deep4rec.datasets.ml100k
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+deep4rec.datasets.movielens\_helper module
+------------------------------------------
+
+.. automodule:: deep4rec.datasets.movielens_helper
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: deep4rec.datasets
+    :members:
+    :undoc-members:
+    :show-inheritance:

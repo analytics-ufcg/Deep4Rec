@@ -19,3 +19,16 @@ pre-commit install
 ```
 pytest -p no:warnings
 ```
+
+# Generate documentation
+
+## Docstrings
+
+We use [google style docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html).
+
+## Generated documentation
+
+We use sphinx to automatically generate documentation.
+
+`make html`
+
