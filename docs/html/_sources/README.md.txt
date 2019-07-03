@@ -37,7 +37,9 @@ Deep4Rec is not affiliated to the official TensorFlow project in any way.
 
 ## Why Deep4Rec?
 
-Deep4Rec was developed mainly to accelerate research by providing a way for researchers to use previously proposed models as black boxes implemented using the same framework.
+Deep4Rec was mainly developed to accelerate research by providing a way for researchers to use previously proposed models as black boxes implemented using the same framework.
+
+Deep4Rec is also a great tool for teaching and learning Recommendation Systems methods based on Deep Learning.
 
 ## Supported models and datasets
 
@@ -53,11 +55,11 @@ Deep4Rec was developed mainly to accelerate research by providing a way for rese
 
 | Dataset Name          | Original Source                                                                                                              | Reference                                                                                                                    | Implementation                                           | Use example                                                                  |
 |-----------------------|------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|------------------------------------------------------------------------------|
-| Census Income Dataset | [UCI Machine Learning directory](https://archive.ics.uci.edu/ml/machine-learning-databases/adult)                            | https://archive.ics.uci.edu/ml/citation_policy.html                                                                          | [deep4rec/dataset/census.py](deep4rec/dataset/census.py) | [examples/census_dataset_wide_deep.py](examples/census_dataset_wide_deep.py) |
+| Census Income Dataset (WIP) | [UCI Machine Learning directory](https://archive.ics.uci.edu/ml/machine-learning-databases/adult)                            | https://archive.ics.uci.edu/ml/citation_policy.html                                                                          | [deep4rec/dataset/census.py](deep4rec/dataset/census.py) | [examples/census_dataset_wide_deep.py](examples/census_dataset_wide_deep.py) |
 | Frappe Dataset        | [Neural Factorization Machines for Sparse Predictive Analytics](http://www.comp.nus.edu.sg/~xiangnan/papers/sigir17-nfm.pdf) | [Neural Factorization Machines for Sparse Predictive Analytics](http://www.comp.nus.edu.sg/~xiangnan/papers/sigir17-nfm.pdf) | [deep4rec/dataset/frappe.py](deep4rec/dataset/frappe.py) | [examples/frappe_nfm.py](examples/frappe_nfm.py)                             |
 | MovieLens 100k        | [Grouplens MovieLens 100k](https://grouplens.org/datasets/movielens/100k/)                                                   | [Grouplens MovieLens 100k ]( https://grouplens.org/datasets/movielens/100k/)                                                | [deep4rec/dataset/ml100k.py](deep4rec/dataset/ml100k.py) | [examples/ml_100k_fm.py](examples/ml_100k_fm.py)                              |
-| MovieLens 1M          | [Grouplens MovieLens 1M](https://grouplens.org/datasets/movielens/1m/)                                                       | [Grouplens MovieLens 1M](https://grouplens.org/datasets/movielens/1m/)                                                       | [deep4rec/dataset/ml.py](deep4rec/dataset/ml.py)        | [examples/ml_1m_wide_deep.py](examples/ml_1m_wide_deep.py)                  |
-| MovieLens 20M         | [Grouplens MovieLens 20M](https://grouplens.org/datasets/movielens/20m/)                                                     | [Grouplens MovieLens 20M](https://grouplens.org/datasets/movielens/20m/)                                                     | [deep4rec/dataset/ml.py](deep4rec/dataset/ml.py)       |                                                                              |
+| MovieLens 1M (WIP)          | [Grouplens MovieLens 1M](https://grouplens.org/datasets/movielens/1m/)                                                       | [Grouplens MovieLens 1M](https://grouplens.org/datasets/movielens/1m/)                                                       | [deep4rec/dataset/ml.py](deep4rec/dataset/ml.py)        | [examples/ml_1m_wide_deep.py](examples/ml_1m_wide_deep.py)                  |
+| MovieLens 20M (WIP)         | [Grouplens MovieLens 20M](https://grouplens.org/datasets/movielens/20m/)                                                     | [Grouplens MovieLens 20M](https://grouplens.org/datasets/movielens/20m/)                                                     | [deep4rec/dataset/ml.py](deep4rec/dataset/ml.py)       |                                                                              |
 
 
 
