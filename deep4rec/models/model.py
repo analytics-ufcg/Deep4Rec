@@ -37,7 +37,7 @@ class Model(tf.keras.Model):
         verbose=True,
         eval_metrics=None,
         eval_loss_functions=None,
-        early_stop=True,
+        early_stop=False,
     ):
         kfold_results = []
         for i, (train_indexes, valid_indexes) in enumerate(
@@ -78,7 +78,7 @@ class Model(tf.keras.Model):
         eval_loss_functions=None,
         train_indexes=None,
         valid_indexes=None,
-        early_stop=True,
+        early_stop=False,
     ):
         if eval_loss_functions is None:
             eval_loss_functions = []
@@ -142,9 +142,11 @@ class Model(tf.keras.Model):
             self._eval_and_store_results(
                 "train", train_ds, eval_loss_functions, eval_metrics, verbose
             )
-            self._eval_and_store_results(
-                "validation", valid_ds, eval_loss_functions, eval_metrics, verbose
-            )
+
+            if valid_ds:
+                self._eval_and_store_results(
+                    "validation", valid_ds, eval_loss_functions, eval_metrics, verbose
+                )
             if run_eval:
                 self._eval_and_store_results(
                     "test", test_ds, eval_loss_functions, eval_metrics, verbose
