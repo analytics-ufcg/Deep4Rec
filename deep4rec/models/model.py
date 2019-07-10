@@ -128,6 +128,9 @@ class Model(tf.keras.Model):
                         **self._features_dict(features), training=True
                     )
                     loss = loss_function(target, pred_rating)
+                    # Reguralization and other losses
+                    loss += sum(self.losses)
+
                 gradients = tape.gradient(loss, self.real_variables)
                 optimizer.apply_gradients(
                     zip(gradients, self.real_variables),
@@ -142,9 +145,10 @@ class Model(tf.keras.Model):
             self._eval_and_store_results(
                 "train", train_ds, eval_loss_functions, eval_metrics, verbose
             )
-            self._eval_and_store_results(
-                "validation", valid_ds, eval_loss_functions, eval_metrics, verbose
-            )
+            if valid_ds:
+                self._eval_and_store_results(
+                    "validation", valid_ds, eval_loss_functions, eval_metrics, verbose
+                )
             if run_eval:
                 self._eval_and_store_results(
                     "test", test_ds, eval_loss_functions, eval_metrics, verbose
@@ -224,4 +228,4 @@ class Model(tf.keras.Model):
 
     @property
     def real_variables(self):
-        return self.variables
+        return self.trainable_weights

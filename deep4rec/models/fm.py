@@ -17,8 +17,8 @@ class FM(Model):
         self,
         ds,
         num_units=64,
-        apply_batchnorm=True,
-        apply_dropout=True,
+        apply_batchnorm=False,
+        apply_dropout=False,
         dropout_prob=0.5,
         l2_regularizer=0.0,
     ):
@@ -37,7 +37,7 @@ class FM(Model):
             num_units,
             input_length=self._num_features,
             embeddings_initializer=tf.keras.initializers.RandomNormal(
-                mean=0.0, stddev=0.01
+                mean=0.0, stddev=0.1
             ),
             embeddings_regularizer=tf.keras.regularizers.l2(l2_regularizer),
         )

@@ -6,6 +6,8 @@ MovieLens 100k dataset: https://grouplens.org/datasets/movielens/100k/
 import os
 
 import numpy as np
+import pandas
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.model_selection import ShuffleSplit
 
@@ -49,11 +51,17 @@ class MovieLens100kDataset(Dataset):
 
     def preprocess(self):
         utils.maybe_uncompress(self.zip_path)
+
+        """
         self.train_data, self.train_y, self.train_users, self.train_items = self._load_data(
             "ua.base", is_train=True
         )
         self.test_data, self.test_y, self.test_users, self.test_items = self._load_data(
             "ua.test", is_train=False
+        )
+        """
+        self.train_data, self.test_data, self.train_y, self.test_y = (
+            self.load_problem_movielens_100k()
         )
 
     def _preprocess_target(self, target, th: int = 3):
@@ -123,6 +131,39 @@ class MovieLens100kDataset(Dataset):
         for train_index, test_index in zip(train_splits, test_splits):
             yield train_index, test_index
 
+    def load_problem_movielens_100k(self):
+        ratings = pandas.read_csv(
+            os.path.join(self.output_dir, "ml-100k", "u.data"),
+            sep="\t",
+            names=["user", "movie", "rating", "timestamp"],
+            header=None,
+        )
+        ratings = ratings.drop("timestamp", axis=1)
+
+        answers = ratings["rating"].values
+        ratings = ratings.drop("rating", axis=1)
+
+        ratings_np = ratings.values
+        data = []
+        items, users = {}, {}
+        for row in ratings_np:
+            u, i = row
+
+            if u not in users:
+                users[u] = self._counter
+                self._counter += 1
+
+            if i not in items:
+                items[i] = self._counter
+                self._counter += 1
+
+            data.append([users[u], items[i]])
+
+        trainX, testX, trainY, testY = train_test_split(
+            np.array(data), answers, train_size=0.75, random_state=42
+        )
+        return trainX, testX, trainY, testY
+
     @property
     def train_features(self):
         return [self.train_data]
@@ -145,7 +186,7 @@ class MovieLens100kDataset(Dataset):
 
     @property
     def num_features_one_hot(self):
-        return len(self.users) + len(self.items)
+        return self._counter
 
     @property
     def num_features(self):

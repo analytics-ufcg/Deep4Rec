@@ -1,0 +1,15 @@
+l2_regularizer = 0
+
+Epoch 50, Time: 8.267282 (s)
+------------ train losses ------------
+rmse: 0.754171
+------------ test losses ------------
+rmse: 0.964820
+
+l2_regularizer = 0.01
+
+Epoch 50, Time: 9.495540 (s)
+------------ train losses ------------
+rmse: 0.910463
+------------ test losses ------------
+rmse: 0.962300

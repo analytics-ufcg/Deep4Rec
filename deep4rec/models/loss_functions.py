@@ -32,13 +32,19 @@ def tf_binary_cross_entropy(target, pred):
 
 
 # Evaluation losses
+def bound(target, pred):
+    return np.clip(pred, a_min=min(target), a_max=max(target))
+
+
 def mse(target, pred, bound_pred=True):
+    assert len(target) == len(pred)
     if bound_pred:
-        pred = np.clip(pred, a_min=min(pred), a_max=max(pred))
+        pred = bound(target, pred)
     return mean_squared_error(target, pred)
 
 
-def rmse(target, pred, bound_pred=True):
+def rmse(target, pred, bound_pred=False):
+    assert len(target) == len(pred)
     return np.sqrt(mse(target, pred, bound_pred=bound_pred))
 
 
@@ -49,8 +55,9 @@ def binary_cross_entropy(target, pred):
 
 
 def l2(target, pred, bound_pred=True):
+    assert len(target) == len(pred)
     if bound_pred:
-        pred = np.clip(pred, a_min=min(pred), a_max=max(pred))
+        pred = bound(target, pred)
     return sum((np.array(target) - np.array(pred)) ** 2)
 
 

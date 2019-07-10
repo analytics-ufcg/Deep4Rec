@@ -106,4 +106,8 @@ class WideDeep(Model):
 
     @property
     def real_variables(self):
-        return self.variables + self.deep_model.variables + self.wide_model.variables
+        return (
+            self.trainable_variables
+            + self.deep_model.trainable_variables
+            + self.wide_model.trainable_variables
+        )
