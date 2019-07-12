@@ -17,8 +17,8 @@ class FM(Model):
         self,
         ds,
         num_units=64,
-        apply_batchnorm=True,
-        apply_dropout=True,
+        apply_batchnorm=False,
+        apply_dropout=False,
         dropout_prob=0.5,
         l2_regularizer=0.0,
     ):
@@ -90,6 +90,6 @@ class FM(Model):
 
         bilinear = tf.reduce_sum(fm, 1, keep_dims=True)  # [batch_size, 1]
         weight_bias = tf.reduce_sum(self.w0(one_hot_features), 1)  # [batch_size, 1]
-        logits = tf.add_n([bilinear, weight_bias]) + self.bias
+        logits = bilinear + weight_bias + self.bias
 
         return logits

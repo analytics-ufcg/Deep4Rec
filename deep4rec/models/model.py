@@ -128,6 +128,7 @@ class Model(tf.keras.Model):
                         **self._features_dict(features), training=True
                     )
                     loss = loss_function(target, pred_rating)
+                    loss += sum(self.losses)
                 gradients = tape.gradient(loss, self.real_variables)
                 optimizer.apply_gradients(
                     zip(gradients, self.real_variables),
