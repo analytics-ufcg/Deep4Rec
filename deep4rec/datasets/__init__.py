@@ -9,14 +9,21 @@ from deep4rec.datasets.ml import MovieLensDataset
 from deep4rec.datasets.clf_negative import ClfNegativeSamplingDataset
 import deep4rec.utils as utils
 
-datasets = {
+# Datasets ready to be used by users
+datasets = {"frappe": FrappeDataset, "ml-100k": MovieLens100kDataset}
+
+# TODO: add these datasets when ready
+wip_datasets = {
     "census": CensusDataset,
-    "frappe": FrappeDataset,
-    "ml-100k": MovieLens100kDataset,
     "ml-1m": MovieLensDataset,
     "ml-1m-neg": ClfNegativeSamplingDataset,
     "ml-20m": MovieLensDataset,
 }
+
+
+def options():
+    """Returns a list containing the available datasets."""
+    return list(datasets.keys())
 
 
 def build_dataset(
@@ -43,6 +50,10 @@ def build_dataset(
 
     if dataset_name in datasets:
         dataset = datasets[dataset_name](
+            output_dir=output_dir, dataset_name=dataset_name, verbose=verbose
+        )
+    elif dataset_name in wip_datasets:
+        dataset = wip_datasets[dataset_name](
             output_dir=output_dir, dataset_name=dataset_name, verbose=verbose
         )
     else:
