@@ -45,6 +45,16 @@ Deep4Rec is also a great tool for teaching and learning Recommendation Systems m
 
 ## Supported models and datasets
 
+You can check the supported models and datasets by running:
+
+```python
+from deep4rec import models
+from deep4rec import datasets
+
+print(models.options())
+print(datasets.options())
+```
+
 ### Models
 
 | Model name  | Paper                                                                                                                        | Authors                       | Implementation                                             | Example                                                                  |
