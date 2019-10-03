@@ -77,4 +77,4 @@ print(datasets.options())
 
 ## Contributing
 
-[Here is all you need to get started](CONTRIBUTE.md).
+[Here is all you need to get started](CONTRIBUTING.md).
