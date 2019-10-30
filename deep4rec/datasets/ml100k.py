@@ -12,6 +12,7 @@ from sklearn.model_selection import ShuffleSplit
 from deep4rec.datasets.dataset import Dataset
 from deep4rec.datasets.dataset import DatasetTask
 import deep4rec.utils as utils
+from deep4rec.datasets import movielens_helper as ml_helper
 
 
 class MovieLens100kDataset(Dataset):
@@ -165,7 +166,7 @@ class MovieLens100kDataset(Dataset):
 
     @property
     def num_features_one_hot(self):
-        return len(self.users) + len(self.items)
+        return len(self.users) + len(self.items) + ml_helper.NUM_GENRES
 
     @property
     def num_features(self):
