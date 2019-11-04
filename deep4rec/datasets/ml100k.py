@@ -34,6 +34,7 @@ class MovieLens100kDataset(Dataset):
 
         # Stores users -> items in train data
         self.users_items = {}
+        self.users_id_items_id = {}
         # Store `users_items` index in train data
         self._ui_index = {}
 
@@ -49,9 +50,12 @@ class MovieLens100kDataset(Dataset):
 
     def preprocess(self):
         utils.maybe_uncompress(self.zip_path)
-        self.train_data, self.train_y, self.train_users, self.train_items = self._load_data(
-            "ua.base", is_train=True
-        )
+        (
+            self.train_data,
+            self.train_y,
+            self.train_users,
+            self.train_items,
+        ) = self._load_data("ua.base", is_train=True)
         self.test_data, self.test_y, self.test_users, self.test_items = self._load_data(
             "ua.test", is_train=False
         )
@@ -87,10 +91,14 @@ class MovieLens100kDataset(Dataset):
                     self.item_index[movie_id] = self._counter
                     self._counter += 1
 
+                if not user_id in self.users_id_items_id:
+                    self.users_id_items_id[user_id] = set()
+
                 data.append([self.user_index[user_id], self.item_index[movie_id]])
                 y.append(self._preprocess_target(rating))
                 users.add(user_id)
                 items.add(movie_id)
+                self.users_id_items_id[user_id].add(movie_id)
 
         if is_train:
             self._store_users_items(data)
@@ -122,6 +130,19 @@ class MovieLens100kDataset(Dataset):
 
         for train_index, test_index in zip(train_splits, test_splits):
             yield train_index, test_index
+
+    def build_graph(self):
+        num_users = 943
+        num_items = 1682
+        graph = np.zeros((num_users, num_items), dtype=np.float32)
+
+        for (user, items) in self.users_id_items_id.items():
+            user = int(user)
+            for item in items:
+                item = int(item)
+                graph[user - 1, item - 1] = 1
+
+        return graph
 
     @property
     def train_features(self):
