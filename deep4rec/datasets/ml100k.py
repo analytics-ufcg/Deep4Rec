@@ -132,15 +132,13 @@ class MovieLens100kDataset(Dataset):
             yield train_index, test_index
 
     def build_graph(self):
-        num_users = 943
-        num_items = 1682
-        graph = np.zeros((num_users, num_items), dtype=np.float32)
+        graph = np.zeros((self.num_users, self.num_items), dtype=np.float32)
 
         for (user, items) in self.users_id_items_id.items():
             user = int(user)
             for item in items:
                 item = int(item)
-                graph[user - 1, item - 1] = 1
+                graph[user, item] = 1
 
         return graph
 
@@ -163,6 +161,14 @@ class MovieLens100kDataset(Dataset):
     @property
     def items(self):
         return self.train_items
+
+    @property
+    def num_items(self):
+        return 1683
+
+    @property
+    def num_users(self):
+        return 944
 
     @property
     def num_features_one_hot(self):
