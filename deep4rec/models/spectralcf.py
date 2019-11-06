@@ -16,6 +16,7 @@ class SpectralCF(Model):
         self.emb_dim = emb_dim
         self.batch_size = batch_size
         self.decay = decay
+        self.ds = ds
 
         self.matrix_adj = self.adjacent_matrix()
         self.matrix_d = self.degree_matrix()
@@ -24,13 +25,13 @@ class SpectralCF(Model):
         self.lamda, self.U = np.linalg.eig(self.matrix_l)
         self.lamda = np.diag(self.lamda)
 
-        self.user_embeddings = tf.Variable(
+        self.user_embeddings = tfe.Variable(
             tf.random_normal(
                 [self.num_users, emb_dim], mean=0.01, stddev=0.02, dtype=tf.float32
             ),
             name="user_embeddings",
         )
-        self.item_embeddings = tf.Variable(
+        self.item_embeddings = tfe.Variable(
             tf.random_normal(
                 [self.num_items, emb_dim], mean=0.01, stddev=0.02, dtype=tf.float32
             ),
@@ -43,7 +44,7 @@ class SpectralCF(Model):
         self.filters = []
         for k in range(self.K):
             self.filters.append(
-                tf.Variable(
+                tfe.Variable(
                     tf.random_normal(
                         [self.emb_dim, self.emb_dim],
                         mean=0.01,
@@ -95,20 +96,43 @@ class SpectralCF(Model):
         return np.identity(self.num_users + self.num_items, dtype=np.float32) - tmp
 
     def create_bpr_loss(self, users, pos_items, neg_items):
-        pos_scores = tf.reduce_sum(tf.multiply(users, pos_items), axis=1)
-        neg_scores = tf.reduce_sum(tf.multiply(users, neg_items), axis=1)
+        def calculate_loss():
+            pos_scores = tf.reduce_sum(tf.multiply(users, pos_items), axis=1)
+            neg_scores = tf.reduce_sum(tf.multiply(users, neg_items), axis=1)
 
-        regularizer = (
-            tf.nn.l2_loss(users) + tf.nn.l2_loss(pos_items) + tf.nn.l2_loss(neg_items)
+            regularizer = (
+                tf.nn.l2_loss(users)
+                + tf.nn.l2_loss(pos_items)
+                + tf.nn.l2_loss(neg_items)
+            )
+            regularizer = regularizer / self.batch_size
+
+            maxi = tf.log(tf.nn.sigmoid(pos_scores - neg_scores))
+            loss = tf.negative(tf.reduce_mean(maxi)) + self.decay * regularizer
+            print(loss)
+            return loss
+
+        return calculate_loss
+
+    def call(self, one_hot_features, training=False, features=None, **kwargs):
+        features = [[], []]
+
+        for feature in one_hot_features:
+            features[0].append(feature[0])
+            features[1].append(feature[1])
+
+        users, items = features
+        users = list(map(lambda user: self.ds.index_user_id[user.numpy()], users))
+        items = list(map(lambda item: self.ds.index_item_id[item.numpy()], items))
+
+        self.u_embeddings = tf.nn.embedding_lookup(self.u_embeddings, users)
+        all_ratings = tf.matmul(
+            self.u_embeddings, self.i_embeddings, transpose_a=False, transpose_b=True
         )
-        regularizer = regularizer / self.batch_size
 
-        maxi = tf.log(tf.nn.sigmoid(pos_scores - neg_scores))
-        loss = tf.negative(tf.reduce_mean(maxi)) + self.decay * regularizer
-        return loss
+        users_items = zip(users, items)
+        ratings = tf.constant(
+            np.array([[all_ratings[user][item]] for (user, item) in users_items])
+        )
 
-    def call(self):
-        # self.users = tf.placeholder(tf.int32, shape=(batch_size,))
-        # self.pos_items = tf.placeholder(tf.int32, shape=(batch_size, ))
-        # self.neg_items = tf.placeholder(tf.int32, shape=(batch_size,))
-        pass
+        return ratings
