@@ -97,7 +97,7 @@ class MovieLens100kDataset(Dataset):
                     self.index_item_id[self._counter] = int(movie_id)
                     self._counter += 1
 
-                if not user_id in self.users_id_items_id:
+                if not int(user_id) in self.users_id_items_id:
                     self.users_id_items_id[int(user_id)] = set()
 
                 data.append([self.user_index[user_id], self.item_index[movie_id]])

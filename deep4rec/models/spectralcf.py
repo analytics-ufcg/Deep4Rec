@@ -110,6 +110,28 @@ class SpectralCF(Model):
             return loss
 
         return calculate_loss
+    
+    def predict(self, users):
+        embeddings = tf.concat([self.user_embeddings, self.item_embeddings], axis=0)
+        all_embeddings = [embeddings]
+
+        for k in range(0, self.K):
+            embeddings = tf.matmul(self.A_hat, embeddings)
+            embeddings = tf.nn.sigmoid(tf.matmul(embeddings, self.filters[k]))
+            all_embeddings += [embeddings]
+
+        all_embeddings = tf.concat(all_embeddings, 1)
+        self.u_embeddings, self.i_embeddings = tf.split(
+            all_embeddings, [self.num_users, self.num_items], 0
+        )
+
+        self.u_embeddings = tf.nn.embedding_lookup(self.u_embeddings, users)
+        all_ratings = tf.matmul(
+            self.u_embeddings, self.i_embeddings, transpose_a=False, transpose_b=True
+        )
+
+        return all_ratings
+
 
     def call(self, one_hot_features, training=False, features=None, **kwargs):
         """Forward pass.
@@ -134,23 +156,7 @@ class SpectralCF(Model):
         users = list(map(lambda user: self.ds.index_user_id[user.numpy()], users))
         items = list(map(lambda item: self.ds.index_item_id[item.numpy()], items))
 
-        embeddings = tf.concat([self.user_embeddings, self.item_embeddings], axis=0)
-        all_embeddings = [embeddings]
-
-        for k in range(0, self.K):
-            embeddings = tf.matmul(self.A_hat, embeddings)
-            embeddings = tf.nn.sigmoid(tf.matmul(embeddings, self.filters[k]))
-            all_embeddings += [embeddings]
-
-        all_embeddings = tf.concat(all_embeddings, 1)
-        self.u_embeddings, self.i_embeddings = tf.split(
-            all_embeddings, [self.num_users, self.num_items], 0
-        )
-
-        self.u_embeddings = tf.nn.embedding_lookup(self.u_embeddings, users)
-        all_ratings = tf.matmul(
-            self.u_embeddings, self.i_embeddings, transpose_a=False, transpose_b=True
-        )
+        all_ratings = self.predict(users)
 
         users_items = list(enumerate(items))
         ratings = tf.gather_nd(all_ratings, users_items)
