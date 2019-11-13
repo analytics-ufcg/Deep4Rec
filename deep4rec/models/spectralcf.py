@@ -1,3 +1,11 @@
+"""
+Implementation of Spectral Collaborative Filtering
+
+Paper: Spectral Collaborative Filtering
+link: https://dl.acm.org/citation.cfm?id=3240343
+Authors: Lei Zheng, Chun-Ta Lu, Fei Jiang, Jiawei Zhang, Philip S. Yu
+"""
+
 import tensorflow as tf
 import tensorflow.contrib.eager as tfe
 import numpy as np
@@ -104,6 +112,18 @@ class SpectralCF(Model):
         return calculate_loss
 
     def call(self, one_hot_features, training=False, features=None, **kwargs):
+        """Forward pass.
+
+        Args:
+            one_hot_features: A dense tensor of shape [batch_size, self._num_features]
+                that indicates which features are present in this input.
+            training: A boolean indicating if is training or not.
+            features: A dense tensor of shape [batch_size, self._num_features] that indicates
+                the value of each feature.
+
+        Returns:
+            ratings.
+        """
         features = [[], []]
 
         for feature in one_hot_features:

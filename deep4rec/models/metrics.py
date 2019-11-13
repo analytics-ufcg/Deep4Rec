@@ -19,12 +19,12 @@ def auc(real, pred):
 
 def recall(real, pred):
     pred = utils.logits_to_class(pred)
-    return sk_metrics.recall_score(real, pred)
+    return sk_metrics.recall_score(real, pred, average='micro')
 
 
 def precision(real, pred):
     pred = utils.logits_to_class(pred)
-    return sk_metrics.precision_score(real, pred)
+    return sk_metrics.precision_score(real, pred, average='micro')
 
 
 def auc_precision_recall(real, pred):
