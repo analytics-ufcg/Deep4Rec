@@ -38,8 +38,10 @@ class SpectralCF(Model):
             name="item_embeddings",
         )
 
-        A_hat = np.dot(self.U, self.U.T) + np.dot(np.dot(self.U, self.lamda), self.U.T)
-        A_hat = A_hat.astype(np.float32)
+        self.A_hat = np.dot(self.U, self.U.T) + np.dot(
+            np.dot(self.U, self.lamda), self.U.T
+        )
+        self.A_hat = self.A_hat.astype(np.float32)
 
         self.filters = []
         for k in range(self.K):
@@ -53,19 +55,6 @@ class SpectralCF(Model):
                     )
                 )
             )
-
-        embeddings = tf.concat([self.user_embeddings, self.item_embeddings], axis=0)
-        all_embeddings = [embeddings]
-
-        for k in range(0, self.K):
-            embeddings = tf.matmul(A_hat, embeddings)
-            embeddings = tf.nn.sigmoid(tf.matmul(embeddings, self.filters[k]))
-            all_embeddings += [embeddings]
-
-        all_embeddings = tf.concat(all_embeddings, 1)
-        self.u_embeddings, self.i_embeddings = tf.split(
-            all_embeddings, [self.num_users, self.num_items], 0
-        )
 
     def adjacent_matrix(self, self_connection=False):
         matrix_adj = np.zeros(
@@ -125,14 +114,25 @@ class SpectralCF(Model):
         users = list(map(lambda user: self.ds.index_user_id[user.numpy()], users))
         items = list(map(lambda item: self.ds.index_item_id[item.numpy()], items))
 
+        embeddings = tf.concat([self.user_embeddings, self.item_embeddings], axis=0)
+        all_embeddings = [embeddings]
+
+        for k in range(0, self.K):
+            embeddings = tf.matmul(self.A_hat, embeddings)
+            embeddings = tf.nn.sigmoid(tf.matmul(embeddings, self.filters[k]))
+            all_embeddings += [embeddings]
+
+        all_embeddings = tf.concat(all_embeddings, 1)
+        self.u_embeddings, self.i_embeddings = tf.split(
+            all_embeddings, [self.num_users, self.num_items], 0
+        )
+
         self.u_embeddings = tf.nn.embedding_lookup(self.u_embeddings, users)
         all_ratings = tf.matmul(
             self.u_embeddings, self.i_embeddings, transpose_a=False, transpose_b=True
         )
 
-        users_items = zip(users, items)
-        ratings = tf.constant(
-            np.array([[all_ratings[user][item]] for (user, item) in users_items])
-        )
+        users_items = list(enumerate(items))
+        ratings = tf.gather_nd(all_ratings, users_items)
 
-        return ratings
+        return tf.reshape(ratings, shape=(len(users), 1))
